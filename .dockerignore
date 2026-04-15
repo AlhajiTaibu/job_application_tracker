@@ -1,0 +1,2 @@
+.venv
+app/services/email_service/.credentials/client_secret.json
