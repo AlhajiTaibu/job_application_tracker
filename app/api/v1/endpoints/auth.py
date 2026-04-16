@@ -98,7 +98,7 @@ async def logout(token: RefreshToken, db: Session = Depends(get_db)):
 async def forgot_password(data: ResendOTP, db: Session = Depends(get_db)):
     try:
         db_user = crud_user.get_user_by_email(db, data.email)
-        task = send_forgot_password_email.delay(db_user.email, template="forgot_password.html",
+        task = send_forgot_password_email.delay(db_user.email, template="auth/forgot_password.html",
                                                 subject="Forgotten password")
         logger.info(f"Task {task.id}, email: {db_user.email}, forgot password sent")
         return {"success": True, "message": "Forgot password OTP sent to email"}

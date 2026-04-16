@@ -8,6 +8,7 @@ from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 import base64
 from fastapi.templating import Jinja2Templates
+
 from app.core.config import settings
 
 logging.basicConfig(level=logging.INFO)
@@ -61,8 +62,7 @@ class Auth:
         return build(api_name, version, credentials=creds)
 
 
-
-SCOPES = ['https://mail.google.com/']
+SCOPES=["https://www.googleapis.com/auth/gmail.send","openid", "https://www.googleapis.com/auth/userinfo.email"]
 CLIENT_SECRET_CONFIG = {
   "installed": {
     "client_id": settings.client_id,
@@ -76,6 +76,7 @@ CLIENT_SECRET_CONFIG = {
     ]
   }
 }
+
 APPLICATION_NAME = 'Gmail API Python Quickstart'
 authInst = Auth(
     SCOPES,
@@ -127,11 +128,11 @@ class SendEmail:
 send_message_instance = SendEmail(service)
 
 def send_email(html: str, recipient: str, subject: str, context=None):
+    templates = Jinja2Templates(directory="templates")
     if context is None:
         context = {}
     try:
         send_email_instance = SendEmail(service)
-        templates = Jinja2Templates(directory="templates")
         raw_mail_body = templates.get_template(
             html
         )
@@ -156,7 +157,7 @@ def send_email(html: str, recipient: str, subject: str, context=None):
 def send_otp():
     templates = Jinja2Templates(directory="templates")
     raw_mail_body = templates.get_template(
-        'verification_email.html'
+        'auth/verification_email.html'
     )
     body = raw_mail_body.render()
     message = send_message_instance.create_message(

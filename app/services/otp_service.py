@@ -18,7 +18,7 @@ class OTPService:
         finally:
             self.db.close()
 
-    def send_otp(self, email: str, template: str = "verification_email.html", subject: str = "OTP Verification"):
+    def send_otp(self, email: str, template: str = "auth/verification_email.html", subject: str = "OTP Verification"):
         otp = EmailVerificationOTP.generate_otp()
         data = EmailVerificationOTP(email=email, otp=otp)
         data.save_to_db()
