@@ -1,8 +1,11 @@
+import uuid
 from datetime import timedelta, datetime
+
 from fastapi import HTTPException
 from sqlalchemy import Column, String, Integer, DateTime, Boolean, func
-from app.database import Base
+from sqlalchemy.dialects.postgresql import UUID
 
+from app.database import Base
 from app.database import SessionLocal
 
 metadata = Base.metadata
@@ -10,7 +13,13 @@ metadata = Base.metadata
 
 class User(Base):
     __tablename__ = "users"
-    id = Column(Integer, primary_key=True)
+    id = Column(
+        UUID(as_uuid=True),
+        primary_key=True,
+        default=uuid.uuid4,
+        index=True,
+        nullable=False
+    )
     email = Column(String, unique=True, index=True, nullable=False)
     hashed_password = Column(String)
     is_active = Column(Boolean, default=True)
@@ -23,9 +32,15 @@ class User(Base):
 
 class EmailVerificationOTP(Base):
     __tablename__ = "email_verification_otp"
-    id = Column(Integer, primary_key=True)
+    id = Column(
+        UUID(as_uuid=True),
+        primary_key=True,
+        default=uuid.uuid4,
+        index=True,
+        nullable=False
+    )
     email = Column(String, nullable=False)
-    otp = Column(String(6), unique=True, index=True, nullable=False)
+    otp = Column(String, unique=True, index=True, nullable=False)
     attempts = Column(Integer, default=0)
     is_verified = Column(Boolean, default=False)
     is_expired = Column(Boolean, default=False)
@@ -66,6 +81,15 @@ class EmailVerificationOTP(Base):
         db = SessionLocal()
         try:
             db.add(self)
+            db.commit()
+            db.refresh(self)
+        finally:
+            db.close()
+
+    def delete_from_db(self):
+        db = SessionLocal()
+        try:
+            db.delete(self)
             db.commit()
             db.refresh(self)
         finally:
