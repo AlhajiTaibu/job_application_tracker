@@ -18,12 +18,14 @@ class Settings(BaseSettings):
     postgres_host: str
     postgres_port: int
     access_token_expire_minutes: int
+    reset_password_token_expire_minutes: int
     refresh_token_expire_minutes: int
     redis_host: str
     celery_broker_url: str
     celery_result_backend: str
     PROJECT_NAME: str = "Job Application Tracker"
     PROJECT_VERSION: str = "1.0.0"
+    LOG_LEVEL: str = "INFO"
     client_id: str
     client_secret: str
     redirect_uris: str

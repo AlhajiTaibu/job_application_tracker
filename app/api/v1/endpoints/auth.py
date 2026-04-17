@@ -1,20 +1,19 @@
-import logging
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.security import OAuth2PasswordRequestForm
+from sqlalchemy import desc
 from sqlalchemy.orm import Session
 
-from app.api.deps import get_db
+from app.api.deps import get_db, get_reset_password_token_user
+from app.core.logging_config import logger
 from app.core.security import _make_access_token, _verify_password, _make_refresh_token, \
-    _verify_token
+    _verify_token, _make_reset_token
 from app.crud import crud_user
-from app.schemas.user import UserCreate, ConfirmEmail, ResendOTP, RefreshToken, ResetPassword
+from app.models.user import EmailVerificationOTP, User
+from app.schemas.user import UserCreate, ConfirmEmail, ResendOTP, RefreshToken, ResetPassword, ResetPasswordOTP
 from app.services.otp_service import OTPService
 from app.tasks.email_tasks import send_verification_email, send_forgot_password_email
-
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
@@ -57,7 +56,10 @@ async def confirm_email(token_data: ConfirmEmail, db: Session = Depends(get_db))
         raise HTTPException(status_code=400, detail=f"{str(error).split(':')[-1]}")
     if not is_otp_verified:
         raise HTTPException(status_code=400, detail="Invalid token")
-    return crud_user.confirm_email(db, email)
+
+    db_user = crud_user.confirm_email(db, email)
+    return {"access_token": _make_access_token(db_user.email), "token_type": "bearer",
+            "refresh_token": _make_refresh_token(db_user.email)}
 
 
 @router.post("/resend-otp")
@@ -107,6 +109,19 @@ async def forgot_password(data: ResendOTP, db: Session = Depends(get_db)):
         raise HTTPException(status_code=400, detail=f"{error}")
 
 
+@router.post("/verify-reset-password-token")
+async def verify_reset_password_token(data: ResetPasswordOTP):
+    try:
+        otp_service = OTPService()
+        is_otp_verified = otp_service.verify_otp(data.email, data.token)
+        reset_token = _make_reset_token(data.email)
+        return {"success": True, "reset_token": reset_token}
+    except Exception as error:
+        logger.error(error)
+        raise HTTPException(status_code=400, detail=f"{str(error)}")
+
+
 @router.post("/reset-password")
-async def reset_password(request_data: ResetPassword, db: Session = Depends(get_db)):
-    return crud_user.reset_password(db, request_data)
+async def reset_password(request_data: ResetPassword, user: Annotated[User, Depends(get_reset_password_token_user)],
+                         db: Session = Depends(get_db)):
+    return crud_user.reset_password(db, request_data, user.email)
