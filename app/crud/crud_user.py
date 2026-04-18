@@ -3,8 +3,8 @@ from pydantic import validate_email
 from sqlalchemy.exc import NoResultFound
 from sqlalchemy.orm import Session
 
-from app.api.deps import logger
-from app.core.security import _validate_password, _make_hash
+from app.core.logging_config import logger
+from app.core.security import _make_hash
 from app.models.user import User, BlacklistedToken
 from app.schemas.user import UserCreate, ResetPassword, RefreshToken
 
@@ -22,8 +22,7 @@ def create_user(db: Session, user: UserCreate):
     except Exception as error:
         raise HTTPException(status_code=400, detail=f"Invalid email: {error}")
     try:
-        password = _validate_password(user.password)
-        hashed_password = _make_hash(password)
+        hashed_password = _make_hash(user.password)
     except Exception as error:
         raise HTTPException(status_code=400, detail=f"Invalid password: {error}")
     db_user = db.query(User).filter_by(email=email).first()
@@ -36,13 +35,12 @@ def create_user(db: Session, user: UserCreate):
     return db_user
 
 
-def reset_password(db: Session, request_data: ResetPassword):
+def reset_password(db: Session, request_data: ResetPassword, email: str):
     try:
-        email = request_data.email
         password = request_data.password
         db_user = db.query(User).filter_by(email=email).first()
         if not db_user:
-            raise HTTPException(status_code=404, detail="User not found")
+            raise HTTPException(status_code=404, detail="Error")
         hashed_password = _make_hash(password)
         db_user.hashed_password = hashed_password
         db.commit()
@@ -60,7 +58,8 @@ def confirm_email(db: Session, email: str):
     db_user.is_verified = True
     db.commit()
     db.refresh(db_user)
-    return {"success": True, "message": "Email verified"}
+    return db_user
+
 
 def check_blacklisted_token(db: Session, token: RefreshToken):
     try:
@@ -73,6 +72,7 @@ def check_blacklisted_token(db: Session, token: RefreshToken):
             raise HTTPException(status_code=401, detail="Token has been revoked")
     except Exception as error:
         logger.error(error)
+
 
 def create_blacklisted_token(db: Session, token: RefreshToken):
     refresh_token = token.refresh_token

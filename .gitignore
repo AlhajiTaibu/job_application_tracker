@@ -207,3 +207,4 @@ marimo/_lsp/
 __marimo__/
 
 /app/services/email_service/.credentials
+.env.local

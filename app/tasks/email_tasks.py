@@ -9,7 +9,7 @@ def send_verification_email(email: str):
         return response
 
 @celery_app.task(name="forgot_password")
-def send_forgot_password_email(email: str, subject: str):
+def send_forgot_password_email(email: str, template:str, subject: str):
         otp_service = OTPService()
-        response = otp_service.send_otp(email, subject)
+        response = otp_service.send_otp(email, template, subject)
         return response
