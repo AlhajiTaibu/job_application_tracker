@@ -6,7 +6,7 @@ from sqlalchemy.orm import Session
 
 from app.core.logging_config import logger
 from app.core.util import decode_cursor, encode_cursor, retrieve_last_item_key, cast_to_column_type
-from app.models.job_application import JobApplication, JobApplicationStatusHistory
+from app.models.job_application import JobApplication, JobApplicationStatusHistory, Interview
 from app.models.user import User
 from app.schemas import job_application
 from app.schemas.job_application import ApiResponse, JobFilterParams
@@ -20,8 +20,8 @@ VALID_TRANSITIONS = {
 }
 
 
-def validate_job_application_status_change(job_application: JobApplication, to_status: str):
-    if to_status not in VALID_TRANSITIONS.get(job_application.status):
+def validate_job_application_status_change(from_status, to_status: str):
+    if to_status not in VALID_TRANSITIONS.get(from_status):
         return False
     return True
 
@@ -41,7 +41,11 @@ def create_job_application(data: job_application.JobApplicationCreate, user: Use
         job_application_instance.save_to_db()
         return {
             "success": True,
-            "message": "Job application created successfully"
+            "message": "Job application created successfully",
+            "data": {
+                "id": job_application_instance.id,
+                "job_title": job_application_instance.job_title
+            }
         }
     except Exception as e:
         logger.error(e)
@@ -62,7 +66,7 @@ def get_job_application_by_id(job_id: str, user: User, db: Session):
 
 def get_job_applications(user: User, db: Session, filters: JobFilterParams, limit: int = 20, cursor: str = None):
     try:
-        stmt = select(JobApplication).where(JobApplication.user_id == user.id)
+        stmt = select(JobApplication).where(JobApplication.user_id == user.id, JobApplication.is_archived == False)
 
         # Sorting
         sort_column = getattr(JobApplication, filters.sort_by)
@@ -138,8 +142,9 @@ def update_job_application(
         db_job_app = db.query(JobApplication).filter(JobApplication.id == job_id).first()
         if db_job_app is None:
             raise HTTPException(status_code=404, detail="Job application not found")
-        if data.status and not validate_job_application_status_change(db_job_app, data.status):
+        if data.status and not validate_job_application_status_change(db_job_app.status, data.status):
             raise HTTPException(status_code=400, detail="Invalid transition")
+
         from_status = db_job_app.status
         db_job_app.status = data.status if data.status else db_job_app.status
         db_job_app.notes = data.notes if data.notes else db_job_app.notes
@@ -148,23 +153,59 @@ def update_job_application(
         db_job_app.job_url = data.job_url if data.job_url else db_job_app.job_url
         db_job_app.job_title = data.job_title if data.job_title else db_job_app.job_title
         db_job_app.source = data.source if data.source else db_job_app.source
+        db_job_app.contacts_id = data.contacts_id if data.contacts_id else db_job_app.contacts_id
         db.commit()
         db.refresh(db_job_app)
 
-        job_status_history = JobApplicationStatusHistory(
-            job_application_id=db_job_app.id,
-            from_status=from_status,
-            to_status=data.status,
-            reason="Status changed"
-        )
-        job_status_history.save_to_db()
+        if data.status and validate_job_application_status_change(from_status, data.status):
+            job_status_history = JobApplicationStatusHistory(
+                job_application_id=db_job_app.id,
+                from_status=from_status,
+                to_status=data.status,
+                reason="Status changed"
+            )
+            job_status_history.save_to_db()
+
+            if data.status == "interviewing":
+                db_interview = db.query(Interview).filter(Interview.job_application_id == job_id).all()
+                if not db_interview:
+                    interview_instance = Interview(
+                        job_application_id=db_job_app.id,
+                        outcome="no decision yet"
+                    )
+                    interview_instance.save_to_db()
+
+            if from_status == "interviewing" and data.status == "offer":
+                db_interview = db.query(Interview).filter(Interview.job_application_id == job_id).order_by(
+                    desc(Interview.created_at)).all()
+                if not db_interview:
+                    raise HTTPException(status_code=400, detail="Update Error")
+                else:
+                    db_interview = db_interview[-1]
+                    db_interview.outcome = "passed"
+                    db_interview.save_to_db()
+
+            if from_status == "interviewing" and data.status in ['rejected', 'withdrawn']:
+                db_interview = db.query(Interview).filter(Interview.job_application_id == job_id).order_by(
+                    desc(Interview.created_at)).all()
+                if not db_interview:
+                    raise HTTPException(status_code=400, detail="Update Error")
+                else:
+                    db_interview = db_interview[-1]
+                    db_interview.outcome = "failed"
+                    db_interview.save_to_db()
+
         return {
             "success": True,
-            "message": "Job application updated successfully"
+            "message": "Job application updated successfully",
+            "data": {
+                "id": db_job_app.id,
+                "job_title": db_job_app.job_title
+            }
         }
     except Exception as error:
         logger.error(error)
-        raise HTTPException(status_code=404, detail="Error updating job application")
+        raise HTTPException(status_code=400, detail="Error updating job application")
 
 
 def delete_job_application(job_id: str, user: User, db: Session):
