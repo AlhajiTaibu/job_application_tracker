@@ -22,4 +22,8 @@ dependencies = [
     "redis>=7.4.0",
     "celery>=5.6.3",
     "boto3>=1.42.92",
+    "boto3-stubs~=1.42.92",
+    "sqladmin>=0.25.0",
+    "wtforms>=3.1.2",
+    "itsdangerous>=2.2.0",
 ]
