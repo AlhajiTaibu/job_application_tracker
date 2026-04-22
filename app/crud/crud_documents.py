@@ -1,19 +1,11 @@
 import base64
-import json
-from datetime import datetime
-from uuid import uuid4
 
 from fastapi import UploadFile, HTTPException
-from fastapi.encoders import jsonable_encoder
-from sqlalchemy import desc
 from sqlalchemy.orm import Session
 
-from app.core.config import settings
 from app.core.logging_config import logger
 from app.models.documents import Documents
-from app.models.job_application import JobApplication
 from app.schemas.documents import DocumentsUpload
-from app.services.document_service import DocumentService
 from app.services.storage_service import storage_service
 from app.tasks.document_tasks import upload_document_task
 
@@ -31,18 +23,17 @@ async def upload_document(file: UploadFile, data: DocumentsUpload):
         task = upload_document_task.delay(payload, encoded_content)
         logger.info(f"Task {task.id}, document upload sent")
         return {
-                "success": True,
-                "message": "Document uploaded successfully"
-            }
+            "success": True,
+            "message": "Document uploaded successfully"
+        }
     except Exception as error:
         logger.error(error)
         raise HTTPException(status_code=400, detail="Error uploading document")
 
 
-
-def view_document(db, doc_id):
+def view_document(db: Session, doc_id: str):
     try:
-        db_doc = db.query(Documents).filter(Documents.id == doc_id).first()
+        db_doc = db.query(Documents).filter(Documents.id == doc_id, Documents.is_archived == False).first()
         if not db_doc:
             raise HTTPException(status_code=404, detail="Document not found")
         url = storage_service.get_signed_url("resumes", f"{db_doc.file_key}.{db_doc.file_type}")
@@ -50,3 +41,21 @@ def view_document(db, doc_id):
     except Exception as error:
         logger.error(error)
         raise HTTPException(status_code=400, detail="Error retrieving document")
+
+
+def delete_document(db: Session, doc_id: str):
+    try:
+        db_doc = db.query(Documents).filter(Documents.id == doc_id).first()
+        if not db_doc:
+            raise HTTPException(status_code=404, detail="Document not found")
+        db_doc.is_archived = True
+        db_doc.is_latest = False
+        db.commit()
+        db.refresh(db_doc)
+        return {
+            "success": True,
+            "message": "Document deleted successfully"
+        }
+    except Exception as error:
+        logger.error(error)
+        raise HTTPException(status_code=400, detail="Error deleting document")

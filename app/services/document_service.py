@@ -2,9 +2,8 @@ import base64
 from datetime import datetime
 from uuid import uuid4
 
-from fastapi import HTTPException, UploadFile
+from fastapi import HTTPException
 from sqlalchemy import desc
-from sqlalchemy.orm import Session
 
 from app.core.config import settings
 from app.core.logging_config import logger
@@ -30,7 +29,8 @@ class DocumentService:
                 raise HTTPException(status_code=404, detail="Job application not found")
 
             doc = self.db.query(Documents).filter(Documents.job_application_id == data['job_application_id'],
-                                             Documents.is_latest == True, Documents.purpose == data['purpose']).order_by(
+                                                  Documents.is_latest == True,
+                                                  Documents.purpose == data['purpose']).order_by(
                 desc(Documents.created_at)).first()
             if doc:
                 doc.is_latest = False
@@ -63,7 +63,7 @@ class DocumentService:
             }
         except Exception as error:
             logger.error(error)
-            raise HTTPException(status_code=400, detail="Error uploading document")
+            raise HTTPException(status_code=400, detail=str(error))
 
     def check_document_extension_vs_purpose(self, ext: str, purpose: str):
         if purpose == "cv" and ext == "pdf":
