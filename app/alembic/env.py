@@ -23,6 +23,7 @@ if config.config_file_name is not None:
 # target_metadata = mymodel.Base.metadata
 from app.database import Base
 from app.models.user import *
+from app.models.documents import *
 from app.models.job_application import *
 target_metadata = Base.metadata
 

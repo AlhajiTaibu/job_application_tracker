@@ -2,7 +2,7 @@ import base64
 from datetime import datetime
 from uuid import UUID
 from fastapi import HTTPException
-from sqlalchemy import DateTime
+from sqlalchemy import DateTime, Date
 
 from app.models.job_application import JobApplication
 
@@ -20,7 +20,7 @@ def decode_cursor(cursor_str: str) -> tuple[str, UUID]:
     """Decodes a Base64 string back into Python objects."""
     try:
         decoded = base64.b64decode(cursor_str.encode()).decode()
-        dt_str, uid_str, sort_by_type = decoded.split("|")
+        dt_str, uid_str = decoded.split("|")
         return dt_str, UUID(uid_str)
     except Exception:
         raise ValueError("Invalid cursor format")
@@ -32,9 +32,9 @@ def cast_to_column_type(value: str, column):
     required by the SQLAlchemy column.
     """
     column_type = column.type
-
-    # 3. Handle DateTimes (created_at, updated_at)
     if isinstance(column_type, DateTime):
+        return datetime.fromisoformat(value)
+    if isinstance(column_type, Date):
         return datetime.fromisoformat(value)
     return value
 

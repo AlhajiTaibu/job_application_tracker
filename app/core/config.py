@@ -1,7 +1,7 @@
 import os
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
-ENV_FILE = os.getenv("ENV_FILE", ".env")
+ENV_FILE = os.getenv("ENV_FILE", ".env.local")
 
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(
@@ -32,5 +32,9 @@ class Settings(BaseSettings):
     project_id: str
     auth_uri: str
     token_uri: str
-
+    file_storage_project_id: str
+    file_storage_secret_access_key: str
+    file_storage_access_key_id: str
+    file_storage_region_name: str
+    max_file_size: int
 settings = Settings()

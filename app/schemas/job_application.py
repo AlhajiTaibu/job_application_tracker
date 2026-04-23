@@ -1,9 +1,11 @@
 import uuid
-from datetime import date
+from datetime import date, datetime, time
 from typing import List, Generic, TypeVar, Optional, Literal
 
 from fastapi.params import Query
 from pydantic import BaseModel
+
+from app.schemas.interview import InterviewDetailShort
 
 T = TypeVar("T")
 
@@ -18,6 +20,7 @@ class JobApplicationCreate(BaseModel):
     company_name: str
     job_url: str
     job_title: str
+    description: str
     source: str
     notes: str
 
@@ -26,24 +29,44 @@ class JobApplicationUpdate(BaseModel):
     company_name: Optional[str] = None
     job_url: Optional[str] = None
     job_title: Optional[str] = None
+    description: Optional[str] = None
     status: Optional[
-        Literal["saved", "applied", "screening", "interview", "offer", "accepted", "rejected", "withdrawn"]] = None
+        Literal["saved", "applied", "screening", "interviewing", "offer", "accepted", "rejected", "withdrawn"]] = None
     source: Optional[str] = None
     notes: Optional[str] = None
+    contacts_id: Optional[str] = None
 
 
 class JobApplicationResponse(BaseModel):
     id: uuid.UUID
+    contacts_id: Optional[uuid.UUID]
+    contact_name: Optional[str] = None
+    contact_email: Optional[str] = None
+    contact_role: Optional[str] = None
     company_name: str
     job_url: str
     job_title: str
+    description: Optional[str]
     status: str
     source: str
     notes: str
+    interviews: Optional[list[InterviewDetailShort]]
+    updated_at: datetime
+
+
+class JobApplicationShortResponse(BaseModel):
+    id: uuid.UUID
+    company_name: str
+    job_title: str
+    status: str
+    description: Optional[str]
+    contacts_id: Optional[uuid.UUID]
+    source: str
+    updated_at: datetime
 
 
 class JobApplicationListResponse(BaseModel):
-    data: List[JobApplicationResponse] = []
+    data: List[JobApplicationShortResponse] = []
     next_cursor: Optional[str]
 
 
@@ -67,3 +90,4 @@ class JobFilterParams:
         self.sort_by = sort_by
         self.order = order
         self.q = q
+

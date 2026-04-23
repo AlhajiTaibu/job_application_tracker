@@ -1,13 +1,17 @@
-
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
+from sqladmin import Admin
 from starlette.middleware.cors import CORSMiddleware
 
+from app.admin import AdminRegistration, authentication_backend
 from app.api.v1.api import api_router
 from app.core.redis import redis_manager
 from app.core.config import settings
 from fastapi.templating import Jinja2Templates
+
+from app.database import engine
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -30,6 +34,11 @@ app.add_middleware(
 )
 
 app.include_router(api_router, prefix="/api/v1")
+
+admin = Admin(app, engine, title=settings.PROJECT_NAME, authentication_backend=authentication_backend)
+
+
+AdminRegistration(admin)
 
 @app.get("/health")
 def health():

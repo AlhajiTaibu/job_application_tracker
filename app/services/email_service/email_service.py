@@ -10,9 +10,7 @@ import base64
 from fastapi.templating import Jinja2Templates
 
 from app.core.config import settings
-
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
+from app.core.logging_config import logger
 
 
 class Auth:
@@ -28,38 +26,44 @@ class Auth:
         Retrieves valid user credentials from storage or
         runs the local flow to generate new ones.
         """
-        creds = None
+        try:
+            creds = None
 
-        # Ensure the directory exists
+            # Ensure the directory exists
 
-        credential_dir = os.path.dirname(self.token_path)
-        if not os.path.exists(credential_dir):
-            os.makedirs(credential_dir)
+            credential_dir = os.path.dirname(self.token_path)
+            if not os.path.exists(credential_dir):
+                os.makedirs(credential_dir)
 
-        # Check for existing token
-        if os.path.exists(self.token_path):
-            creds = Credentials.from_authorized_user_file(self.token_path, self.scopes)
+            # Check for existing token
+            if os.path.exists(self.token_path):
+                creds = Credentials.from_authorized_user_file(self.token_path, self.scopes)
 
-        # If there are no (valid) credentials, let the user log in.
-        if not creds or not creds.valid:
-            if creds and creds.expired and creds.refresh_token:
-                creds.refresh(Request())
-            else:
-                flow = InstalledAppFlow.from_client_config(
-                    self.client_secret_config, self.scopes)
-                # run_local_server handles the old tools.run_flow logic automatically
-                creds = flow.run_local_server(port=0)
+            # If there are no (valid) credentials, let the user log in.
+            if not creds or not creds.valid:
+                if creds and creds.expired and creds.refresh_token:
+                    creds.refresh(Request())
+                else:
+                    flow = InstalledAppFlow.from_client_config(
+                        self.client_secret_config, self.scopes)
+                    # run_local_server handles the old tools.run_flow logic automatically
+                    creds = flow.run_local_server(port=0)
 
-            # Save the credentials for the next run
-            with open(self.token_path, 'w') as token:
-                token.write(creds.to_json())
+                # Save the credentials for the next run
+                with open(self.token_path, 'w') as token:
+                    token.write(creds.to_json())
 
-        return creds
+            return creds
+        except Exception as error:
+            logger.error(error)
 
     def get_service(self, api_name='gmail', version='v1'):
         """Helper to directly return the API service object"""
-        creds = self.get_credentials()
-        return build(api_name, version, credentials=creds)
+        try:
+            creds = self.get_credentials()
+            return build(api_name, version, credentials=creds)
+        except Exception as error:
+            logger.error(error)
 
 
 SCOPES=["https://www.googleapis.com/auth/gmail.send","openid", "https://www.googleapis.com/auth/userinfo.email"]
@@ -123,7 +127,7 @@ class SendEmail:
             )
             return message
         except Exception as error:
-            print(f'An error occurred: {error}')
+            logger(f'An error occurred: {error}')
 
 send_message_instance = SendEmail(service)
 

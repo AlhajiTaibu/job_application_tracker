@@ -2,7 +2,6 @@ from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.security import OAuth2PasswordRequestForm
-from sqlalchemy import desc
 from sqlalchemy.orm import Session
 
 from app.api.deps import get_db, get_reset_password_token_user
@@ -10,7 +9,7 @@ from app.core.logging_config import logger
 from app.core.security import _make_access_token, _verify_password, _make_refresh_token, \
     _verify_token, _make_reset_token
 from app.crud import crud_user
-from app.models.user import EmailVerificationOTP, User
+from app.models.user import User
 from app.schemas.user import UserCreate, ConfirmEmail, ResendOTP, RefreshToken, ResetPassword, ResetPasswordOTP
 from app.services.otp_service import OTPService
 from app.tasks.email_tasks import send_verification_email, send_forgot_password_email
@@ -19,7 +18,7 @@ router = APIRouter()
 
 
 @router.post("/register")
-async def register(user: UserCreate, db: Session = Depends(get_db)):
+async def register(user: UserCreate, db: Annotated[Session, Depends(get_db)]):
     user = crud_user.create_user(db, user)
     try:
         task = send_verification_email.delay(user.email)
@@ -35,7 +34,7 @@ async def register(user: UserCreate, db: Session = Depends(get_db)):
 
 
 @router.post("/login")
-async def login(data: Annotated[OAuth2PasswordRequestForm, Depends()], db: Session = Depends(get_db)):
+async def login(data: Annotated[OAuth2PasswordRequestForm, Depends()], db: Annotated[Session, Depends(get_db)]):
     user = crud_user.get_user_by_email(db, data.username)
     if not user or not _verify_password(data.password, user.hashed_password):
         raise HTTPException(status_code=400, detail="Invalid credentials")
@@ -46,7 +45,7 @@ async def login(data: Annotated[OAuth2PasswordRequestForm, Depends()], db: Sessi
 
 
 @router.post("/confirm-email")
-async def confirm_email(token_data: ConfirmEmail, db: Session = Depends(get_db)):
+async def confirm_email(token_data: ConfirmEmail, db: Annotated[Session, Depends(get_db)]):
     try:
         email, token = token_data.email, token_data.token
         otp_service = OTPService()
@@ -63,7 +62,7 @@ async def confirm_email(token_data: ConfirmEmail, db: Session = Depends(get_db))
 
 
 @router.post("/resend-otp")
-async def resend_otp(data: ResendOTP, db: Session = Depends(get_db)):
+async def resend_otp(data: ResendOTP, db: Annotated[Session, Depends(get_db)]):
     try:
         db_user = crud_user.get_user_by_email(db, data.email)
         task = send_verification_email.delay(db_user.email)
@@ -79,7 +78,7 @@ async def resend_otp(data: ResendOTP, db: Session = Depends(get_db)):
 
 
 @router.post("/refresh-token")
-async def refresh_access_token(token: RefreshToken, db: Session = Depends(get_db)):
+async def refresh_access_token(token: RefreshToken, db: Annotated[Session, Depends(get_db)]):
     crud_user.check_blacklisted_token(db, token)
     try:
         email = _verify_token(token.refresh_token)
@@ -92,12 +91,12 @@ async def refresh_access_token(token: RefreshToken, db: Session = Depends(get_db
 
 
 @router.post("/logout")
-async def logout(token: RefreshToken, db: Session = Depends(get_db)):
+async def logout(token: RefreshToken, db: Annotated[Session, Depends(get_db)]):
     return crud_user.create_blacklisted_token(db, token)
 
 
 @router.post("/forgot-password")
-async def forgot_password(data: ResendOTP, db: Session = Depends(get_db)):
+async def forgot_password(data: ResendOTP, db: Annotated[Session, Depends(get_db)]):
     try:
         db_user = crud_user.get_user_by_email(db, data.email)
         task = send_forgot_password_email.delay(db_user.email, template="auth/forgot_password.html",
@@ -123,5 +122,5 @@ async def verify_reset_password_token(data: ResetPasswordOTP):
 
 @router.post("/reset-password")
 async def reset_password(request_data: ResetPassword, user: Annotated[User, Depends(get_reset_password_token_user)],
-                         db: Session = Depends(get_db)):
+                         db: Annotated[Session, Depends(get_db)]):
     return crud_user.reset_password(db, request_data, user.email)
