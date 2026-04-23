@@ -24,8 +24,9 @@ class JobApplication(Base):
     company_name = Column(String(255), nullable=False)
     job_url = Column(String(255), nullable=False)
     job_title = Column(String(255), nullable=False)
+    description = Column(String)
     status = Column(String(255), nullable=False)
-    date_applied = Column(DateTime, nullable=False)
+    date_applied = Column(DateTime)
     source = Column(String(255), nullable=False)
     notes = Column(String(255), nullable=True)
     is_archived = Column(Boolean, nullable=False, default=False)
@@ -72,6 +73,7 @@ class JobApplicationStatusHistory(Base):
         finally:
             db.close()
 
+
 class Contacts(Base):
     __tablename__ = "contacts"
     id = Column(
@@ -84,7 +86,7 @@ class Contacts(Base):
     user_id = Column(UUID, ForeignKey(User.id), nullable=False, index=True)
     name = Column(String(255), nullable=False)
     email = Column(String(255))
-    role = Column(String(15), nullable=False)
+    role = Column(String(15))
     linkedIn_url = Column(String)
     notes = Column(String)
     created_at = Column(DateTime, default=func.now())
@@ -118,6 +120,12 @@ class Interview(Base):
     time = Column(Time)
     notes = Column(String)
     round = Column(Integer)
+    estimated_duration = Column(String(50))
+    actual_duration = Column(String(50))
+    timezone = Column(String(15))
+    interviewer_name = Column(String(50))
+    feedback = Column(String)
+    link = Column(String)
     created_at = Column(DateTime, default=func.now())
 
     def __repr__(self):
@@ -142,7 +150,7 @@ class JobTask(Base):
         index=True,
         nullable=False
     )
-    job_application_id = Column(UUID, ForeignKey("job_application.id", ondelete="CASCADE"), nullable=False, index=True)
+    job_application_id = Column(UUID, ForeignKey("job_application.id", ondelete="CASCADE"))
     name = Column(String(255))
     status = Column(String(10), default="pending")
     due_date = Column(DateTime)
@@ -150,7 +158,7 @@ class JobTask(Base):
     created_at = Column(DateTime, default=func.now())
 
     def __repr__(self):
-        return f"JobTask: {self.job_application_id} name: {self.name} time: {self.time}"
+        return f"JobTask: {self.id} name: {self.name} time: {self.time}"
 
     def save_to_db(self):
         db = SessionLocal()

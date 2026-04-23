@@ -4,11 +4,11 @@ from sqlalchemy.orm import Session
 
 from app.core.logging_config import logger
 from app.models.job_application import Contacts, JobApplication
-from app.schemas import job_application
+from app.schemas.contacts import ContactsCreate, ContactsUpdate, ContactsLinkJobApplication
 from app.schemas.job_application import ApiResponse
 
 
-def create_contacts(data: job_application.ContactsCreate, user_id: str):
+def create_contacts(data: ContactsCreate, user_id: str):
     try:
         contacts_instance = Contacts(
             name=data.name,
@@ -32,7 +32,7 @@ def create_contacts(data: job_application.ContactsCreate, user_id: str):
         raise HTTPException(status_code=404, detail="Error creating contact")
 
 
-def update_contacts(data: job_application.ContactsUpdate, db: Session, contact_id: str):
+def update_contacts(data: ContactsUpdate, db: Session, contact_id: str):
     try:
         db_contact = db.query(Contacts).filter(Contacts.id == contact_id).first()
         if db_contact is None:
@@ -103,7 +103,7 @@ def delete_contacts(user_id: str, contact_id: str, db: Session):
         raise HTTPException(status_code=404, detail="Error deleting contact")
 
 
-def link_contact_to_job_application(data: job_application.ContactsLinkJobApplication, db: Session, contact_id: str):
+def link_contact_to_job_application(data: ContactsLinkJobApplication, db: Session, contact_id: str):
     try:
         job_application_id = data.job_application_id
         db_job = db.query(JobApplication).filter(JobApplication.id == job_application_id).first()

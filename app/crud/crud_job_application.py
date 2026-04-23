@@ -6,24 +6,11 @@ from sqlalchemy.orm import Session
 
 from app.core.logging_config import logger
 from app.core.util import decode_cursor, encode_cursor, retrieve_last_item_key, cast_to_column_type
-from app.models.job_application import JobApplication, JobApplicationStatusHistory, Interview
+from app.models.job_application import JobApplication, Contacts, Interview
 from app.models.user import User
 from app.schemas import job_application
 from app.schemas.job_application import ApiResponse, JobFilterParams
-
-VALID_TRANSITIONS = {
-    'saved': ["applied", "rejected", "withdrawn"],
-    "applied": ["screening", "rejected", "withdrawn"],
-    'screening': ['interviewing', 'rejected', 'withdrawn'],
-    'interviewing': ['offer', 'rejected', 'withdrawn'],
-    'offer': ['accepted', 'rejected', 'withdrawn'],
-}
-
-
-def validate_job_application_status_change(from_status, to_status: str):
-    if to_status not in VALID_TRANSITIONS.get(from_status):
-        return False
-    return True
+from app.services.state_machine import job_application_state_machine
 
 
 def create_job_application(data: job_application.JobApplicationCreate, user: User):
@@ -32,6 +19,7 @@ def create_job_application(data: job_application.JobApplicationCreate, user: Use
             company_name=data.company_name,
             job_url=data.job_url,
             job_title=data.job_title,
+            description=data.description,
             user_id=user.id,
             date_applied=datetime.now(),
             notes=data.notes,
@@ -58,7 +46,16 @@ def get_job_application_by_id(job_id: str, user: User, db: Session):
                                                  JobApplication.user_id == user.id).first()
         if not db_job:
             raise HTTPException(status_code=404, detail="Job application not found")
-        return ApiResponse(success=True, payload=db_job)
+        db_job_dict = db_job.__dict__
+        if db_job.contacts_id:
+            contact = db.query(Contacts).filter(Contacts.id == db_job.contacts_id).first()
+            db_job_dict['contact_name'] = contact.name if contact else None
+            db_job_dict['contact_email'] = contact.email if contact else None
+            db_job_dict['contact_role'] = contact.role if contact else None
+        interviews = db.query(Interview).filter(Interview.job_application_id == job_id).all()
+        if interviews:
+            db_job_dict['interviews'] = interviews
+        return ApiResponse(success=True, payload=db_job_dict)
     except Exception as error:
         logger.error(error)
         raise HTTPException(status_code=404, detail="Error getting job application")
@@ -142,58 +139,18 @@ def update_job_application(
         db_job_app = db.query(JobApplication).filter(JobApplication.id == job_id).first()
         if db_job_app is None:
             raise HTTPException(status_code=404, detail="Job application not found")
-        if data.status and not validate_job_application_status_change(db_job_app.status, data.status):
-            raise HTTPException(status_code=400, detail="Invalid transition")
-
-        from_status = db_job_app.status
-        db_job_app.status = data.status if data.status else db_job_app.status
+        if data.status:
+            job_application_state_machine.transition_state(db_job_app, data.status)
         db_job_app.notes = data.notes if data.notes else db_job_app.notes
         db_job_app.updated_at = datetime.now()
         db_job_app.company_name = data.company_name if data.company_name else db_job_app.company_name
         db_job_app.job_url = data.job_url if data.job_url else db_job_app.job_url
         db_job_app.job_title = data.job_title if data.job_title else db_job_app.job_title
+        db_job_app.description = data.description if data.description else db_job_app.description
         db_job_app.source = data.source if data.source else db_job_app.source
         db_job_app.contacts_id = data.contacts_id if data.contacts_id else db_job_app.contacts_id
         db.commit()
         db.refresh(db_job_app)
-
-        if data.status and validate_job_application_status_change(from_status, data.status):
-            job_status_history = JobApplicationStatusHistory(
-                job_application_id=db_job_app.id,
-                from_status=from_status,
-                to_status=data.status,
-                reason="Status changed"
-            )
-            job_status_history.save_to_db()
-
-            if data.status == "interviewing":
-                db_interview = db.query(Interview).filter(Interview.job_application_id == job_id).all()
-                if not db_interview:
-                    interview_instance = Interview(
-                        job_application_id=db_job_app.id,
-                        outcome="no decision yet"
-                    )
-                    interview_instance.save_to_db()
-
-            if from_status == "interviewing" and data.status == "offer":
-                db_interview = db.query(Interview).filter(Interview.job_application_id == job_id).order_by(
-                    desc(Interview.created_at)).all()
-                if not db_interview:
-                    raise HTTPException(status_code=400, detail="Update Error")
-                else:
-                    db_interview = db_interview[-1]
-                    db_interview.outcome = "passed"
-                    db_interview.save_to_db()
-
-            if from_status == "interviewing" and data.status in ['rejected', 'withdrawn']:
-                db_interview = db.query(Interview).filter(Interview.job_application_id == job_id).order_by(
-                    desc(Interview.created_at)).all()
-                if not db_interview:
-                    raise HTTPException(status_code=400, detail="Update Error")
-                else:
-                    db_interview = db_interview[-1]
-                    db_interview.outcome = "failed"
-                    db_interview.save_to_db()
 
         return {
             "success": True,

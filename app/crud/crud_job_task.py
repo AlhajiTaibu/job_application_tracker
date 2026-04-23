@@ -3,7 +3,8 @@ from sqlalchemy.orm import Session
 
 from app.core.logging_config import logger
 from app.models.job_application import JobTask, JobApplication
-from app.schemas.job_application import JobTaskCreate, JobTaskUpdate, ApiResponse
+from app.schemas.job_application import ApiResponse
+from app.schemas.job_task import JobTaskCreate, JobTaskUpdate
 from datetime import datetime
 
 

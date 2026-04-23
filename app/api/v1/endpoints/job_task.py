@@ -9,7 +9,8 @@ from app.api.deps import get_current_user, get_db
 from app.core.logging_config import logger
 from app.crud import crud_job_task
 from app.models.user import User
-from app.schemas.job_application import JobTaskCreate, JobTaskUpdate, ApiResponse, JobTaskDetail, JobTaskList
+from app.schemas.job_application import ApiResponse
+from app.schemas.job_task import JobTaskCreate, JobTaskUpdate, JobTaskDetail, JobTaskList
 
 router = APIRouter()
 
