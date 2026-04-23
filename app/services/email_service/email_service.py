@@ -127,7 +127,7 @@ class SendEmail:
             )
             return message
         except Exception as error:
-            print(f'An error occurred: {error}')
+            logger(f'An error occurred: {error}')
 
 send_message_instance = SendEmail(service)
 

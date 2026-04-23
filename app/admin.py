@@ -76,12 +76,18 @@ class ContactsAdmin(ModelView, model=Contacts):
 
 class InterviewAdmin(ModelView, model=Interview):
     can_delete = False
-    column_list = ["id", "format", "round", "date", "time", "outcome"]
+    column_list = ["id", "format", "round", "date", "time", "interviewer_name", "outcome"]
     column_filters = [
         StaticValuesFilter(
             column=Interview.format,
             values=[("phone", "Phone"), ("video", "Video"), ("onsite", "Onsite"), ("technical", "Technical"),
-                    ("panel", "Panel")]
+                    ("panel", "Panel"), ("system design", "System Design"), ("behavioural", "Behavioural"),
+                    ("case study", "Case Study"), ("pair programming", "Pair Programming")]
+        ),
+        StaticValuesFilter(
+            column=Interview.outcome,
+            values=[("scheduled", "Scheduled"), ("pending", "Pending"), ("passed", "Passed"), ("rejected", "Rejected"),
+                    ("withdrawn", "Withdrawn"), ("no feedback", "No Feedback")]
         )
     ]
     icon = "fa-solid fa-message"

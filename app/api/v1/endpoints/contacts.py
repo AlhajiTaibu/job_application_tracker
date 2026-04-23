@@ -9,8 +9,9 @@ from app.api.deps import get_current_user, get_db
 from app.core.logging_config import logger
 from app.crud import crud_contacts
 from app.models.user import User
-from app.schemas.job_application import ContactsCreate, ContactsUpdate, ApiResponse, ContactsDetailResponse, \
+from app.schemas.contacts import ContactsCreate, ContactsUpdate, ContactsDetailResponse, \
     ContactsListResponse, ContactsLinkJobApplication
+from app.schemas.job_application import ApiResponse
 
 router = APIRouter()
 
