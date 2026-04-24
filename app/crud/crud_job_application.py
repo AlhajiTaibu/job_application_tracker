@@ -9,7 +9,7 @@ from app.core.util import decode_cursor, encode_cursor, retrieve_last_item_key, 
 from app.models.job_application import JobApplication, Contacts, Interview
 from app.models.user import User
 from app.schemas import job_application
-from app.schemas.job_application import ApiResponse, JobFilterParams
+from app.schemas.job_application import ApiResponse, JobFilterParams, JobApplicationStatusTransition
 from app.services.state_machine import job_application_state_machine
 
 
@@ -21,7 +21,6 @@ def create_job_application(data: job_application.JobApplicationCreate, user: Use
             job_title=data.job_title,
             description=data.description,
             user_id=user.id,
-            date_applied=datetime.now(),
             notes=data.notes,
             status="saved",
             source=data.source,
@@ -139,8 +138,6 @@ def update_job_application(
         db_job_app = db.query(JobApplication).filter(JobApplication.id == job_id).first()
         if db_job_app is None:
             raise HTTPException(status_code=404, detail="Job application not found")
-        if data.status:
-            job_application_state_machine.transition_state(db_job_app, data.status)
         db_job_app.notes = data.notes if data.notes else db_job_app.notes
         db_job_app.updated_at = datetime.now()
         db_job_app.company_name = data.company_name if data.company_name else db_job_app.company_name
@@ -149,6 +146,7 @@ def update_job_application(
         db_job_app.description = data.description if data.description else db_job_app.description
         db_job_app.source = data.source if data.source else db_job_app.source
         db_job_app.contacts_id = data.contacts_id if data.contacts_id else db_job_app.contacts_id
+        db_job_app.date_applied = datetime.strptime(data.date_applied, "%d/%m/%Y") if data.date_applied else db_job_app.date_applied
         db.commit()
         db.refresh(db_job_app)
 
@@ -181,3 +179,16 @@ def delete_job_application(job_id: str, user: User, db: Session):
         }
     except Exception:
         raise HTTPException(status_code=404, detail="Error deleting job application")
+
+
+def transition_job_application_status(db: Session, job_id: str, data: JobApplicationStatusTransition):
+    try:
+        db_job_app = db.query(JobApplication).filter(JobApplication.id == job_id).first()
+        if db_job_app is None:
+            raise HTTPException(status_code=404, detail="Job application not found")
+        db.close()
+        result = job_application_state_machine.transition_state(db_job_app, data.to_status, metadata={"reason": data.reason})
+        return ApiResponse(success=True, payload=result)
+    except Exception as error:
+        logger.error(error)
+        raise HTTPException(status_code=400, detail=str(error))

@@ -1,5 +1,5 @@
 from fastapi import APIRouter
-from app.api.v1.endpoints import auth, job_application, contacts, interview, job_task, documents
+from app.api.v1.endpoints import auth, job_application, contacts, interview, job_task, documents, notification
 
 api_router = APIRouter()
 
@@ -37,4 +37,10 @@ api_router.include_router(
     documents.router,
     prefix="/document",
     tags=["Document"]
+)
+
+api_router.include_router(
+    notification.router,
+    prefix="/notification",
+    tags=["Notification"]
 )

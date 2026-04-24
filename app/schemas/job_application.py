@@ -30,11 +30,23 @@ class JobApplicationUpdate(BaseModel):
     job_url: Optional[str] = None
     job_title: Optional[str] = None
     description: Optional[str] = None
-    status: Optional[
-        Literal["saved", "applied", "screening", "interviewing", "offer", "accepted", "rejected", "withdrawn"]] = None
+    date_applied: Optional[str] = None
     source: Optional[str] = None
     notes: Optional[str] = None
     contacts_id: Optional[str] = None
+
+
+class JobApplicationStatusTransition(BaseModel):
+    to_status: Literal["saved", "applied", "assessment", "screening", "interviewing", "offer", "accepted", "stale", "rejected", "withdrawn"]
+    reason: str
+
+
+class JobApplicationStatusResponse(BaseModel):
+    id: uuid.UUID
+    status: str
+    available_status: List[str]
+    previous_status: str
+    message: str
 
 
 class JobApplicationResponse(BaseModel):
