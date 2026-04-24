@@ -11,14 +11,14 @@ celery_app = Celery(
     include=['app.tasks.email_tasks', 'app.tasks.job_tasks', 'app.tasks.document_tasks']
 )
 
-celery_app.autodiscover_tasks()
+celery_app.autodiscover_tasks(['app.tasks'])
 
 
 celery_app.conf.beat_schedule = {
     'flag_overdue_tasks': {
         'task': 'app.tasks.job_tasks.flag_overdue_tasks',
         'schedule': 86400.0,  # Run daily
-    },
+    }
     # 'monthly-invoice-report': {
     #     'task': 'apps.invoicing.tasks.generate_monthly_invoice_report',
     #     'schedule': crontab(hour=9, minute=0, day_of_month=1),  # Monthly on 1st at 9 AM

@@ -37,4 +37,6 @@ class Settings(BaseSettings):
     file_storage_access_key_id: str
     file_storage_region_name: str
     max_file_size: int
+    firebase_credentials_base64: str
+
 settings = Settings()
