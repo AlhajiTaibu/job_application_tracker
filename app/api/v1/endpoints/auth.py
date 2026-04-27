@@ -12,7 +12,7 @@ from app.crud import crud_user
 from app.models.user import User
 from app.schemas.user import UserCreate, ConfirmEmail, ResendOTP, RefreshToken, ResetPassword, ResetPasswordOTP
 from app.services.otp_service import OTPService
-from app.tasks.email_tasks import send_verification_email, send_forgot_password_email
+from app.tasks.user_tasks import send_verification_email, send_forgot_password_email
 
 router = APIRouter()
 

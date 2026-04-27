@@ -29,6 +29,37 @@ async def interview(
         raise HTTPException(status_code=400, detail=str(e))
 
 
+@router.get("/upcoming_interviews", response_model=ApiResponse[InterviewJoinList])
+async def interviews(
+        user: Annotated[User, Depends(get_current_user)],
+        db: Annotated[Session, Depends(get_db)],
+        limit: int = 20
+):
+    try:
+        if not user.is_active:
+            raise HTTPException(status_code=403, detail="Forbidden")
+        return crud_interview.get_upcoming_interviews(user_id=user.id, db=db, limit=limit)
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+@router.get("/interviews_history", response_model=ApiResponse[InterviewJoinList])
+async def interviews(
+        user: Annotated[User, Depends(get_current_user)],
+        db: Annotated[Session, Depends(get_db)],
+        filters: Annotated[InterviewFilterParams, Depends()],
+        limit: int = 20,
+        cursor: Optional[str] = None
+):
+    try:
+        if not user.is_active:
+            raise HTTPException(status_code=403, detail="Forbidden")
+        return crud_interview.get_interviews_history(user_id=user.id, db=db, filters=filters, limit=limit,
+                                                     cursor=cursor)
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
 @router.post("/update/{interview_id}")
 async def interview(
         user: Annotated[User, Depends(get_current_user)],
@@ -58,7 +89,7 @@ async def interview(
         raise HTTPException(status_code=400, detail=str(e))
 
 
-@router.get("/list/{job_id}", response_model=ApiResponse[InterviewList] )
+@router.get("/list/{job_id}", response_model=ApiResponse[InterviewList])
 async def interviews(
         user: Annotated[User, Depends(get_current_user)],
         db: Annotated[Session, Depends(get_db)],
@@ -83,35 +114,5 @@ async def interview(
         if not user.is_active:
             raise HTTPException(status_code=403, detail="Forbidden")
         return crud_interview.delete_interview(interview_id=interview_id, db=db)
-    except Exception as e:
-        raise HTTPException(status_code=400, detail=str(e))
-
-
-@router.get("/upcoming_interviews", response_model=ApiResponse[InterviewJoinList])
-async def interviews(
-        user: Annotated[User, Depends(get_current_user)],
-        db: Annotated[Session, Depends(get_db)],
-        limit: int = 20
-):
-    try:
-        if not user.is_active:
-            raise HTTPException(status_code=403, detail="Forbidden")
-        return crud_interview.get_upcoming_interviews(user_id=user.id, db=db, limit=limit)
-    except Exception as e:
-        raise HTTPException(status_code=400, detail=str(e))
-
-
-@router.get("/interviews_history", response_model=ApiResponse[InterviewJoinList])
-async def interviews(
-        user: Annotated[User, Depends(get_current_user)],
-        db: Annotated[Session, Depends(get_db)],
-        filters: Annotated[InterviewFilterParams, Depends()],
-        limit: int = 20,
-        cursor: Optional[str] = None
-):
-    try:
-        if not user.is_active:
-            raise HTTPException(status_code=403, detail="Forbidden")
-        return crud_interview.get_interviews_history(user_id=user.id, db=db, filters=filters, limit=limit, cursor=cursor)
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))

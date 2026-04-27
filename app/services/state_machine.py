@@ -2,6 +2,7 @@ from datetime import datetime, timedelta
 from typing import Dict, Any
 
 from fastapi import HTTPException
+from sqlalchemy import desc
 
 from app.core.logging_config import logger
 from app.database import SessionLocal
@@ -115,7 +116,6 @@ class JobApplicationStateMachine:
         pass
 
     def _handle_interviewing_to_offer(self, job_app: JobApplication, metadata: Dict[str, Any] = None):
-        # TODO The system immediately creates a task: "Respond to offer — check deadline with recruiter."
         task_service.create_task(
             name="Respond to offer — check deadline with recruiter.",
             description="Respond to offer — check deadline with recruiter.",
@@ -123,14 +123,14 @@ class JobApplicationStateMachine:
             created_by=TaskCreator.SYSTEM,
             meta_data={"job_application_id": job_app.id}
         )
-        # db_interview = self.db.query(Interview).filter(Interview.job_application_id == job_app.id).order_by(
-        #     desc(Interview.created_at)).all()
-        # if not db_interview:
-        #     raise HTTPException(status_code=400, detail="Update Error")
-        # else:
-        #     db_interview = db_interview[-1]
-        #     db_interview.outcome = "passed"
-        #     db_interview.save_to_db()
+        db_interview = self.db.query(Interview).filter(Interview.job_application_id == job_app.id).order_by(
+            desc(Interview.created_at)).all()
+        if not db_interview:
+            raise HTTPException(status_code=400, detail="Update Error")
+        else:
+            db_interview = db_interview[-1]
+            db_interview.outcome = "passed"
+            db_interview.save_to_db()
 
     def _handle_offer_to_accepted(self, job_app, metadata: Dict[str, Any] = None):
         pass
@@ -211,8 +211,10 @@ class InterviewStateMachine:
         finally:
             self.db.close()
 
-    def transition_state(self, interview: Interview):
+    def transition_state(self, interview: Interview, to_outcome: str):
         try:
+            interview.outcome = to_outcome
+            interview.save_to_db()
             self._apply_transition_logic(interview)
             return True
         except Exception as error:
@@ -234,13 +236,20 @@ class InterviewStateMachine:
 
     def _handle_rejected(self, interview: Interview):
         job_app = self.db.query(JobApplication).filter(JobApplication.id == interview.job_application_id).first()
+        if job_app.status != "interviewing":
+            job_application_state_machine.transition_state(job_app, "interviewing", JobApplicationStatusTransitionType.SYSTEM)
         job_application_state_machine.transition_state(job_app, "rejected", JobApplicationStatusTransitionType.SYSTEM)
 
     def _handle_withdrawn(self, interview: Interview):
         job_app = self.db.query(JobApplication).filter(JobApplication.id == interview.job_application_id).first()
+        if job_app.status != "interviewing":
+            job_application_state_machine.transition_state(job_app, "interviewing", JobApplicationStatusTransitionType.SYSTEM)
         job_application_state_machine.transition_state(job_app, "withdrawn", JobApplicationStatusTransitionType.SYSTEM)
 
     def _handle_passed(self, interview):
+        job_app = self.db.query(JobApplication).filter(JobApplication.id == interview.job_application_id).first()
+        if job_app.status != "interviewing":
+            job_application_state_machine.transition_state(job_app, "interviewing", JobApplicationStatusTransitionType.SYSTEM)
         new_interview = Interview(
             job_application_id=interview.job_application_id
         )
@@ -263,6 +272,9 @@ class InterviewStateMachine:
         )
 
     def _handle_waiting(self, interview):
+        job_app = self.db.query(JobApplication).filter(JobApplication.id == interview.job_application_id).first()
+        if job_app.status != "interviewing":
+            job_application_state_machine.transition_state(job_app, "interviewing", JobApplicationStatusTransitionType.SYSTEM)
         task_service.create_task(
             name=f"Send thank you email to {interview.interviewer_name}",
             description=f"Send thank you email to {interview.interviewer_name}",
