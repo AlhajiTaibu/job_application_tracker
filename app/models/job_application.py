@@ -201,3 +201,28 @@ class TaskStatus(str, Enum):
     PENDING = "pending"
     COMPLETED = "completed"
     CANCELLED = "cancelled"
+    SNOOZED = "snoozed"
+
+
+class SnoozeJobTask(Base):
+    __tablename__ = "snoozed_job_task"
+    id = Column(
+        UUID(as_uuid=True),
+        primary_key=True,
+        default=uuid.uuid4,
+        index=True,
+        nullable=False
+    )
+    task_id = Column(UUID, ForeignKey("job_task.id"))
+    snoozed_count = Column(Integer, default=0)
+    next_due_date = Column(DateTime)
+    created_at = Column(DateTime, default=func.now())
+
+    def save_to_db(self):
+        db = SessionLocal()
+        try:
+            db.add(self)
+            db.commit()
+            db.refresh(self)
+        finally:
+            db.close()

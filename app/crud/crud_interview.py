@@ -70,7 +70,7 @@ def update_interview(data: InterviewUpdate, interview_id: str, db: Session):
         db.refresh(db_interview)
 
         if data.outcome:
-            interview_state_machine.transition_state(db_interview)
+            interview_state_machine.transition_state(db_interview, data.outcome)
 
         return {
             "success": True,

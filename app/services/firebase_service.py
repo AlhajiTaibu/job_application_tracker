@@ -6,6 +6,8 @@ from firebase_admin import credentials, messaging
 from pathlib import Path
 from app.core.config import settings
 from app.core.logging_config import logger
+from app.database import SessionLocal
+from app.models.notification import NotificationToken
 
 
 class FireBaseService:
@@ -52,3 +54,29 @@ class FireBaseService:
 
 
 firebase_service = FireBaseService()
+
+
+class PushNotificationService:
+    def __init__(self):
+        self.firebase_service = firebase_service
+        try:
+            self.db = SessionLocal()
+        finally:
+            self.db.close()
+
+    def send_push_notification(self, user_id: str, title: str, body: str, data_payload: dict = None):
+        try:
+            tokens = self.db.query(NotificationToken).filter(NotificationToken.user_id == user_id).all()
+            tokens_list = [token.token for token in tokens]
+            self.firebase_service.send_unified_push(
+                tokens=tokens_list,
+                title=title,
+                body=body,
+                data_payload=data_payload
+            )
+        except Exception as error:
+            logger.error(error)
+            raise Exception("Error sending notification")
+
+
+push_notification_service = PushNotificationService()
