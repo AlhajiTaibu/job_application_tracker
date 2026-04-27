@@ -1,4 +1,5 @@
 import uuid
+from enum import Enum
 
 from sqlalchemy import Column, String, DateTime, func, Boolean, ForeignKey, Date, Time, Integer
 from sqlalchemy.dialects.postgresql.base import UUID
@@ -58,6 +59,7 @@ class JobApplicationStatusHistory(Base):
     job_application_id = Column(UUID, ForeignKey("job_application.id"), nullable=False, index=True)
     from_status = Column(String(255), nullable=False)
     to_status = Column(String(255), nullable=False)
+    transition_type = Column(String(20), default="system")
     reason = Column(String(255), nullable=True)
     created_at = Column(DateTime, default=func.now())
 
@@ -72,6 +74,11 @@ class JobApplicationStatusHistory(Base):
             db.refresh(self)
         finally:
             db.close()
+
+class JobApplicationStatusTransitionType(str, Enum):
+    SYSTEM = "system"
+    MANUAL = "manual"
+    AUTO_SUGGESTED = "auto_suggested"
 
 
 class Contacts(Base):
@@ -150,15 +157,20 @@ class JobTask(Base):
         index=True,
         nullable=False
     )
-    job_application_id = Column(UUID, ForeignKey("job_application.id", ondelete="CASCADE"))
-    name = Column(String(255))
+    job_application_id = Column(UUID, ForeignKey("job_application.id"))
+    user_id = Column(UUID, ForeignKey(User.id))
+    name = Column(String(255), nullable=False)
+    description = Column(String)
+    task_type = Column(String(50))
+    created_by = Column(String(20))
     status = Column(String(10), default="pending")
     due_date = Column(DateTime)
     is_overdue = Column(Boolean, default=False)
+    updated_at = Column(DateTime)
     created_at = Column(DateTime, default=func.now())
 
     def __repr__(self):
-        return f"JobTask: {self.id} name: {self.name} time: {self.time}"
+        return f"JobTask: {self.id} name: {self.name}"
 
     def save_to_db(self):
         db = SessionLocal()
@@ -168,3 +180,24 @@ class JobTask(Base):
             db.refresh(self)
         finally:
             db.close()
+
+
+class TaskType(str, Enum):
+    FOLLOW_UP = "follow_up"
+    CONFIRM = "confirm"
+    REMINDER = "reminder"
+    THANK_YOU = "thank_you"
+    REVIEW = "review"
+    OTHER = "other"
+
+
+class TaskCreator(str, Enum):
+    MANUAL = "manual"
+    SYSTEM = "system"
+    AUTO_SUGGESTED = "auto_suggested"
+
+
+class TaskStatus(str, Enum):
+    PENDING = "pending"
+    COMPLETED = "completed"
+    CANCELLED = "cancelled"

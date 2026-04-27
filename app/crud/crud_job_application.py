@@ -6,7 +6,8 @@ from sqlalchemy.orm import Session
 
 from app.core.logging_config import logger
 from app.core.util import decode_cursor, encode_cursor, retrieve_last_item_key, cast_to_column_type
-from app.models.job_application import JobApplication, Contacts, Interview
+from app.models.job_application import JobApplication, Contacts, Interview, \
+    JobApplicationStatusTransitionType
 from app.models.user import User
 from app.schemas import job_application
 from app.schemas.job_application import ApiResponse, JobFilterParams, JobApplicationStatusTransition
@@ -187,7 +188,7 @@ def transition_job_application_status(db: Session, job_id: str, data: JobApplica
         if db_job_app is None:
             raise HTTPException(status_code=404, detail="Job application not found")
         db.close()
-        result = job_application_state_machine.transition_state(db_job_app, data.to_status, metadata={"reason": data.reason})
+        result = job_application_state_machine.transition_state(db_job_app, data.to_status, JobApplicationStatusTransitionType.MANUAL, metadata={"reason": data.reason})
         return ApiResponse(success=True, payload=result)
     except Exception as error:
         logger.error(error)

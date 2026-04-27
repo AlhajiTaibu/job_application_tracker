@@ -5,7 +5,7 @@ from starlette.requests import Request
 
 from app.core.config import settings
 from app.models.documents import Documents
-from app.models.job_application import JobApplication, Contacts, Interview, JobApplicationStatusHistory
+from app.models.job_application import JobApplication, Contacts, Interview, JobApplicationStatusHistory, JobTask
 from app.models.notification import NotificationToken
 from app.models.user import User
 from sqladmin.filters import BooleanFilter, StaticValuesFilter, AllUniqueStringValuesFilter
@@ -65,7 +65,7 @@ class JobApplicationStatusHistoryAdmin(ModelView, model=JobApplicationStatusHist
     can_delete = False
     can_edit = False
     can_create = False
-    column_list = ["id", "job_application_id", "from_status", "to_status", "reason", "created_at"]
+    column_list = ["id", "job_application_id", "from_status", "to_status", "transition_type", "reason", "created_at"]
     column_searchable_list = ["job_application_id", "reason"]
     icon = "fa-solid fa-history"
 
@@ -138,6 +138,18 @@ class NotificationTokenAdmin(ModelView, model=NotificationToken):
     icon = "fa-solid fa-mobile-screen-button"
 
 
+class JobTaskAdmin(ModelView, model=JobTask):
+    can_delete = False
+    column_list = ["id", "name", "description", "due_date", "status", "job_application_id"]
+    column_filters = [
+        StaticValuesFilter(
+            column=JobTask.status,
+            values=[("pending", "Pending"), ("completed", "Completed"), ("cancelled", "Cancelled")]
+        )
+    ]
+    icon = "fa-solid fa-tasks"
+
+
 class AdminRegistration:
     def __init__(self, admin: Admin):
         admin.add_view(UserAdmin)
@@ -147,3 +159,5 @@ class AdminRegistration:
         admin.add_view(InterviewAdmin)
         admin.add_view(DocumentAdmin)
         admin.add_view(NotificationTokenAdmin)
+        admin.add_view(JobTaskAdmin)
+
