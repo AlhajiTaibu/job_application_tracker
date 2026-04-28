@@ -24,9 +24,9 @@ class ContactsDetailResponse(BaseModel):
     id: uuid.UUID
     name: str
     email: str
-    role: str
-    linkedIn_url: str
-    notes: str
+    role: Optional[str]
+    linkedIn_url: Optional[str]
+    notes: Optional[str]
 
 
 class ContactsListResponse(BaseModel):

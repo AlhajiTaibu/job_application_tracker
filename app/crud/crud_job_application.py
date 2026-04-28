@@ -6,7 +6,7 @@ from sqlalchemy.orm import Session
 
 from app.core.logging_config import logger
 from app.core.util import decode_cursor, encode_cursor, retrieve_last_item_key, cast_to_column_type
-from app.models.job_application import JobApplication, Contacts, Interview, \
+from app.models.job_application import JobApplication, Interview, \
     JobApplicationStatusTransitionType
 from app.models.user import User
 from app.schemas import job_application
@@ -46,16 +46,9 @@ def get_job_application_by_id(job_id: str, user: User, db: Session):
                                                  JobApplication.user_id == user.id).first()
         if not db_job:
             raise HTTPException(status_code=404, detail="Job application not found")
-        db_job_dict = db_job.__dict__
-        if db_job.contacts_id:
-            contact = db.query(Contacts).filter(Contacts.id == db_job.contacts_id).first()
-            db_job_dict['contact_name'] = contact.name if contact else None
-            db_job_dict['contact_email'] = contact.email if contact else None
-            db_job_dict['contact_role'] = contact.role if contact else None
         interviews = db.query(Interview).filter(Interview.job_application_id == job_id).all()
-        if interviews:
-            db_job_dict['interviews'] = interviews
-        return ApiResponse(success=True, payload=db_job_dict)
+        db_job.interviews = interviews
+        return ApiResponse(success=True, payload=db_job)
     except Exception as error:
         logger.error(error)
         raise HTTPException(status_code=404, detail="Error getting job application")
@@ -146,7 +139,6 @@ def update_job_application(
         db_job_app.job_title = data.job_title if data.job_title else db_job_app.job_title
         db_job_app.description = data.description if data.description else db_job_app.description
         db_job_app.source = data.source if data.source else db_job_app.source
-        db_job_app.contacts_id = data.contacts_id if data.contacts_id else db_job_app.contacts_id
         db_job_app.date_applied = datetime.strptime(data.date_applied, "%d/%m/%Y") if data.date_applied else db_job_app.date_applied
         db.commit()
         db.refresh(db_job_app)
