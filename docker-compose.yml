@@ -24,7 +24,15 @@ services:
 
   worker:
     build: .
-    command: celery -A app.core.celery worker --loglevel=info
+    command: celery -A app.core.celery worker  --pool=threads --loglevel=info
+    env_file: .env
+    depends_on:
+      - redis
+      - db
+
+  beat:
+    build: .
+    command: celery -A app.core.celery beat --loglevel=info
     env_file: .env
     depends_on:
       - redis
