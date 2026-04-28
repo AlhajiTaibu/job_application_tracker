@@ -14,9 +14,9 @@ from app.services.storage_service import storage_service
 
 
 class DocumentService:
-    def __init__(self):
+    def __init__(self, bucket):
         self.db = SessionLocal()
-        self.bucket = "resumes"
+        self.bucket = bucket
 
     def upload_file(self, data, file_content):
         try:
@@ -41,7 +41,8 @@ class DocumentService:
                 raise HTTPException(status_code=400, detail="Invalid file format")
             file_key = f"{uuid4()}.{ext}"
             content = base64.b64decode(file_content)
-            storage_service.upload_file(content, self.bucket, ext, file_key)
+            extension = self.resolve_ext(ext)
+            storage_service.upload_file(content, self.bucket, extension, file_key)
             final_file_key = file_key.split('.')[0]
 
             doc_instance = Documents(
@@ -73,3 +74,31 @@ class DocumentService:
         if purpose == "portfolio" and ext in ["jpeg", "jpg", "png"]:
             return True
         return False
+
+    def upload_image(self, data, file_content):
+        try:
+            file_key = data['file_key']
+            ext = self.resolve_ext(data['ext'])
+            content = base64.b64decode(file_content)
+            return storage_service.upload_file(content, self.bucket, ext, file_key)
+        except Exception as error:
+            raise Exception(str(error))
+
+    def delete_image(self, file_key):
+        try:
+            storage_service.delete_file(self.bucket, file_key)
+        except Exception as error:
+            logger.error(error)
+            raise Exception(str(error))
+
+    def resolve_ext(self, ext: str):
+        if ext == "pdf":
+            return "application/pdf"
+        elif ext == "jpeg":
+            return "image/jpeg"
+        elif ext == "jpg":
+            return "image/jpg"
+        elif ext == "png":
+            return "image/png"
+        else:
+            return "application/octet-stream"

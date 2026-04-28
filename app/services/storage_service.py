@@ -28,7 +28,7 @@ class DocumentStorage:
             Bucket=bucket,
             Key=file_key,
             Body=file_content,
-            ContentType="application/pdf" if extension == "pdf" else "image/jpeg"
+            ContentType=extension
         )
         return file_key
 
@@ -38,5 +38,8 @@ class DocumentStorage:
             Params={'Bucket': bucket, 'Key': file_key},
             ExpiresIn=expires_in
         )
+
+    def delete_file(self, bucket: str, file_key: str):
+        self.s3.delete_object(Bucket=bucket, Key=file_key)
 
 storage_service = DocumentStorage()

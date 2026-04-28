@@ -40,8 +40,12 @@ async def login(data: Annotated[OAuth2PasswordRequestForm, Depends()], db: Annot
         raise HTTPException(status_code=400, detail="Invalid credentials")
     if not user.is_verified:
         raise HTTPException(status_code=400, detail="User's email is not verified")
-    return {"access_token": _make_access_token(user.email), "token_type": "bearer",
-            "refresh_token": _make_refresh_token(user.email)}
+    return {
+        "access_token": _make_access_token(user.email),
+        "token_type": "bearer",
+        "refresh_token": _make_refresh_token(user.email),
+        "user_id": user.id
+    }
 
 
 @router.post("/confirm-email")
@@ -57,8 +61,12 @@ async def confirm_email(token_data: ConfirmEmail, db: Annotated[Session, Depends
         raise HTTPException(status_code=400, detail="Invalid token")
 
     db_user = crud_user.confirm_email(db, email)
-    return {"access_token": _make_access_token(db_user.email), "token_type": "bearer",
-            "refresh_token": _make_refresh_token(db_user.email)}
+    return {
+        "access_token": _make_access_token(db_user.email),
+        "token_type": "bearer",
+        "refresh_token": _make_refresh_token(db_user.email),
+        "user_id": db_user.id
+    }
 
 
 @router.post("/resend-otp")
@@ -86,8 +94,11 @@ async def refresh_access_token(token: RefreshToken, db: Annotated[Session, Depen
         logger.error(e)
         raise HTTPException(status_code=400, detail=f"{str(e)}")
     db_user = crud_user.get_user_by_email(db, email)
-    return {"access_token": _make_access_token(db_user.email), "token_type": "bearer",
-            "message": "Token refreshed successfully"}
+    return {
+        "access_token": _make_access_token(db_user.email),
+        "token_type": "bearer",
+        "message": "Token refreshed successfully"
+    }
 
 
 @router.post("/logout")

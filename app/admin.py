@@ -155,7 +155,7 @@ class JobTaskAdmin(ModelView, model=JobTask):
 
 class ProfileAdmin(ModelView, model=Profile):
     can_delete = False
-    column_list = ["id", "first_name", "last_name", "title", "notification_type"]
+    column_list = ["id", "first_name", "last_name", "title", "notification_type", "preview_link"]
     column_filters = [
         StaticValuesFilter(
             column=Profile.notification_type,
@@ -163,6 +163,13 @@ class ProfileAdmin(ModelView, model=Profile):
         )
     ]
     icon = "fa-solid fa-user"
+    column_formatters = {
+        "preview_link": lambda m, a: Markup(
+            f'<a href="{m.avatar_url}" target="_blank">'
+            f'  <i class="fa-solid fa-eye"></i> View Image'
+            f'</a>'
+        )
+    }
 
 class AdminRegistration:
     def __init__(self, admin: Admin):
