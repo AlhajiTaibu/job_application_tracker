@@ -10,7 +10,6 @@ def register_device(user_id: str, data: NotificationRegister, db: Session):
     try:
         existing_token = db.query(NotificationToken).filter(NotificationToken.token == data.token).first()
         if existing_token:
-            # Update the existing token's user_id if needed
             existing_token.user_id = user_id
             db.commit()
             return {"success":True, "status": "Token updated"}
@@ -21,3 +20,12 @@ def register_device(user_id: str, data: NotificationRegister, db: Session):
     except Exception as e:
         logger.error(e)
         raise HTTPException(status_code=400, detail="Error registering device")
+
+
+def retrieve_user_tokens(user_id: str, db: Session):
+    try:
+        tokens = db.query(NotificationToken).filter(NotificationToken.user_id == user_id).all()
+        return [token.token for token in tokens]
+    except Exception as e:
+        logger.error(e)
+        raise HTTPException(status_code=400, detail="Error retrieving tokens")

@@ -5,9 +5,9 @@ from starlette.requests import Request
 
 from app.core.config import settings
 from app.models.documents import Documents
-from app.models.job_application import JobApplication, Contacts, Interview, JobApplicationStatusHistory
+from app.models.job_application import JobApplication, Contacts, Interview, JobApplicationStatusHistory, JobTask
 from app.models.notification import NotificationToken
-from app.models.user import User
+from app.models.user import User, Profile
 from sqladmin.filters import BooleanFilter, StaticValuesFilter, AllUniqueStringValuesFilter
 
 
@@ -65,7 +65,7 @@ class JobApplicationStatusHistoryAdmin(ModelView, model=JobApplicationStatusHist
     can_delete = False
     can_edit = False
     can_create = False
-    column_list = ["id", "job_application_id", "from_status", "to_status", "reason", "created_at"]
+    column_list = ["id", "job_application_id", "from_status", "to_status", "transition_type", "reason", "created_at"]
     column_searchable_list = ["job_application_id", "reason"]
     icon = "fa-solid fa-history"
 
@@ -138,12 +138,41 @@ class NotificationTokenAdmin(ModelView, model=NotificationToken):
     icon = "fa-solid fa-mobile-screen-button"
 
 
+class JobTaskAdmin(ModelView, model=JobTask):
+    can_delete = False
+    column_list = ["id", "name", "description", "due_date", "status", "task_type", "created_by"]
+    column_filters = [
+        StaticValuesFilter(
+            column=JobTask.status,
+            values=[("pending", "Pending"), ("completed", "Completed"), ("snoozed", "Snoozed"), ("cancelled", "Cancelled")]
+        ),
+        StaticValuesFilter(
+            column=JobTask.created_by,
+            values=[("manual", "Manual"), ("system", "System"), ("auto_suggested", "Auto Suggested")]
+        )
+    ]
+    icon = "fa-solid fa-tasks"
+
+class ProfileAdmin(ModelView, model=Profile):
+    can_delete = False
+    column_list = ["id", "first_name", "last_name", "title", "notification_type"]
+    column_filters = [
+        StaticValuesFilter(
+            column=Profile.notification_type,
+            values=[("email", "Email"), ("push", "Push Notification")]
+        )
+    ]
+    icon = "fa-solid fa-user"
+
 class AdminRegistration:
     def __init__(self, admin: Admin):
         admin.add_view(UserAdmin)
+        admin.add_view(ProfileAdmin)
         admin.add_view(JobApplicationAdmin)
         admin.add_view(JobApplicationStatusHistoryAdmin)
         admin.add_view(ContactsAdmin)
         admin.add_view(InterviewAdmin)
         admin.add_view(DocumentAdmin)
         admin.add_view(NotificationTokenAdmin)
+        admin.add_view(JobTaskAdmin)
+

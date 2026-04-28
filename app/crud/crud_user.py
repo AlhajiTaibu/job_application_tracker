@@ -5,7 +5,7 @@ from sqlalchemy.orm import Session
 
 from app.core.logging_config import logger
 from app.core.security import _make_hash
-from app.models.user import User, BlacklistedToken
+from app.models.user import User, BlacklistedToken, Profile
 from app.schemas.user import UserCreate, ResetPassword, RefreshToken
 
 
@@ -25,14 +25,20 @@ def create_user(db: Session, user: UserCreate):
         hashed_password = _make_hash(user.password)
     except Exception as error:
         raise HTTPException(status_code=400, detail=f"Invalid password: {error}")
-    db_user = db.query(User).filter_by(email=email).first()
-    if db_user:
-        raise HTTPException(status_code=400, detail="Email already registered")
-    db_user = User(email=email, hashed_password=hashed_password)
-    db.add(db_user)
-    db.commit()
-    db.refresh(db_user)
-    return db_user
+    try:
+        db_user = db.query(User).filter_by(email=email).first()
+        if db_user:
+            raise HTTPException(status_code=400, detail="Email already registered")
+        db_user = User(email=email, hashed_password=hashed_password)
+        db.add(db_user)
+        db.commit()
+        db.refresh(db_user)
+        profile = Profile(user_id=db_user.id)
+        profile.save_to_db()
+        return db_user
+    except Exception as error:
+        logger.error(error)
+        raise Exception("Error registering user")
 
 
 def reset_password(db: Session, request_data: ResetPassword, email: str):

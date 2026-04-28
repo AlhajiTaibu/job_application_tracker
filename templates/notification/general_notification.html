@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+
+{% block title %}Job Application Notification{% endblock %}
+
+{% block header_title %}Job Application Tracker{% endblock %}
+{% block header_subtitle %}
+    <div class="subtitle">Job Application Notification</div>
+{% endblock %}
+
+{% block content %}
+    <h2>Job Application Notification</h2>
+    <p>Hello {{ email }},</p>
+
+    <p> URGENT:{{task_type}} - {{ message }}</p>
+
+<!--    <p>Once verified, you'll be able to:</p>-->
+{% endblock %}

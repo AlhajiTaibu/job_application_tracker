@@ -6,7 +6,7 @@ from sqlalchemy.orm import Session
 
 from app.core.logging_config import logger
 from app.core.util import encode_cursor, decode_cursor, cast_to_column_type
-from app.models.job_application import Interview, JobApplication
+from app.models.job_application import Interview, JobApplication, JobApplicationStatusTransitionType
 from app.schemas.interview import InterviewCreate, InterviewUpdate, InterviewFilterParams
 from app.schemas.job_application import ApiResponse
 from app.services.state_machine import job_application_state_machine, interview_state_machine
@@ -35,10 +35,10 @@ def create_interview(data: InterviewCreate, db: Session):
         db.close()
         if job_application_instance.status in ["saved", "applied"]:
             if job_application_instance.status == "saved":
-                job_application_state_machine.transition_state(job_application_instance, "applied")
-                job_application_state_machine.transition_state(job_application_instance, "screening")
+                job_application_state_machine.transition_state(job_application_instance, "applied", JobApplicationStatusTransitionType.SYSTEM)
+                job_application_state_machine.transition_state(job_application_instance, "screening", JobApplicationStatusTransitionType.SYSTEM)
             else:
-                job_application_state_machine.transition_state(job_application_instance, "screening")
+                job_application_state_machine.transition_state(job_application_instance, "screening", JobApplicationStatusTransitionType.SYSTEM)
         return {
             "success": True,
             "message": "Interview created successfully",
@@ -70,7 +70,7 @@ def update_interview(data: InterviewUpdate, interview_id: str, db: Session):
         db.refresh(db_interview)
 
         if data.outcome:
-            interview_state_machine.transition_state(db_interview)
+            interview_state_machine.transition_state(db_interview, data.outcome)
 
         return {
             "success": True,

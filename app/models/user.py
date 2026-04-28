@@ -1,5 +1,6 @@
 import uuid
 from datetime import timedelta, datetime
+from enum import Enum
 
 from fastapi import HTTPException
 from sqlalchemy import Column, String, Integer, DateTime, Boolean, func
@@ -101,3 +102,40 @@ class BlacklistedToken(Base):
 
     token = Column(String, primary_key=True, index=True)
     blacklisted_on = Column(DateTime, server_default=func.now())
+
+
+class Profile(Base):
+    __tablename__ = "profile"
+    id = Column(
+        UUID(as_uuid=True),
+        primary_key=True,
+        default=uuid.uuid4,
+        index=True,
+        nullable=False
+    )
+    user_id = Column(UUID, unique=True, index=True, nullable=False)
+    title = Column(String(50))
+    first_name = Column(String(255))
+    last_name = Column(String(255))
+    avatar_url = Column(String)
+    full_image_url = Column(String)
+    notification_type = Column(String(20), default="email")
+    created_at = Column(DateTime, default=func.now())
+    updated_at = Column(DateTime, default=func.now(), onupdate=func.now())
+
+    def __repr__(self):
+        return f"Profile: {self.first_name} {self.last_name}"
+
+    def save_to_db(self):
+        db = SessionLocal()
+        try:
+            db.add(self)
+            db.commit()
+            db.refresh(self)
+        finally:
+            db.close()
+
+
+class NotificationType(str, Enum):
+    EMAIL = "email"
+    PUSH = "push"
