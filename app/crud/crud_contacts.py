@@ -112,7 +112,7 @@ def link_contact_to_job_application(data: ContactsLinkJobApplication, db: Sessio
         db_contact = db.query(Contacts).filter(Contacts.id == contact_id).first()
         if db_contact is None:
             raise HTTPException(status_code=404, detail="Contact not found")
-        db_job.contacts_id = contact_id
+        db_contact.job_applications.append(db_job)
         db.commit()
         db.refresh(db_job)
         return {

@@ -1,14 +1,21 @@
 import uuid
 from enum import Enum
 
-from sqlalchemy import Column, String, DateTime, func, Boolean, ForeignKey, Date, Time, Integer
+from sqlalchemy import Column, String, DateTime, func, Boolean, ForeignKey, Date, Time, Integer, Table
 from sqlalchemy.dialects.postgresql.base import UUID
+from sqlalchemy.orm import relationship
 
 from app.database import Base
 from app.database import SessionLocal
 from app.models.user import User
 
 metadata = Base.metadata
+
+
+association_table = Table('association', Base.metadata,
+    Column('job_application_id', UUID(as_uuid=True), ForeignKey('job_application.id')),
+    Column('contacts_id', UUID(as_uuid=True), ForeignKey('contacts.id'))
+)
 
 
 class JobApplication(Base):
@@ -21,7 +28,7 @@ class JobApplication(Base):
         nullable=False
     )
     user_id = Column(UUID, ForeignKey(User.id), nullable=False, index=True)
-    contacts_id = Column(UUID, ForeignKey("contacts.id", ondelete="SET NULL"), default="")
+    contacts = relationship("Contacts", secondary=association_table, back_populates="job_applications")
     company_name = Column(String(255), nullable=False)
     job_url = Column(String(255), nullable=False)
     job_title = Column(String(255), nullable=False)
@@ -91,6 +98,7 @@ class Contacts(Base):
         nullable=False
     )
     user_id = Column(UUID, ForeignKey(User.id), nullable=False, index=True)
+    job_applications = relationship("JobApplication", secondary=association_table, back_populates="contacts")
     name = Column(String(255), nullable=False)
     email = Column(String(255))
     role = Column(String(15))
