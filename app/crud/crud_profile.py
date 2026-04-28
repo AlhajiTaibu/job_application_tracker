@@ -70,8 +70,8 @@ def get_profile(user_id: str, db: Session):
 
 async def upload_profile_avatar(user_id: str, db: Session, file: UploadFile):
     try:
-        if file.content_type not in ["image/jpeg", "image/png"]:
-            return Exception("Only JPEG and PNG allowed")
+        if file.content_type not in ["image/jpeg", "image/png", "image/jpg"]:
+            return Exception("Only JPEG, JPG and PNG allowed")
 
         max_file_size = settings.max_file_size
         if file.size > max_file_size:

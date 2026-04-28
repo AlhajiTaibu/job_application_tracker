@@ -56,4 +56,4 @@ async def profile(
         return await crud_profile.upload_profile_avatar(user_id=user.id, db=db, file=file)
     except Exception as error:
         logger.error(error)
-        raise HTTPException(status_code=400, detail="Error uploading avatar")
+        raise HTTPException(status_code=400, detail=str(error))
