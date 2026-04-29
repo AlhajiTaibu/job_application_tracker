@@ -5,6 +5,7 @@ from typing import List, Generic, TypeVar, Optional, Literal
 from fastapi.params import Query
 from pydantic import BaseModel
 
+from app.schemas.contacts import ContactsDetailResponse
 from app.schemas.interview import InterviewDetailShort
 
 T = TypeVar("T")
@@ -51,19 +52,16 @@ class JobApplicationStatusResponse(BaseModel):
 
 class JobApplicationResponse(BaseModel):
     id: uuid.UUID
-    contacts_id: Optional[uuid.UUID]
-    contact_name: Optional[str] = None
-    contact_email: Optional[str] = None
-    contact_role: Optional[str] = None
+    contacts: Optional[List[ContactsDetailResponse]]
     company_name: str
     job_url: str
     job_title: str
     description: Optional[str]
     status: str
     source: str
-    notes: str
-    interviews: Optional[list[InterviewDetailShort]]
-    updated_at: datetime
+    notes: Optional[str]
+    interviews: Optional[List[InterviewDetailShort]]
+    updated_at: Optional[datetime]
 
 
 class JobApplicationShortResponse(BaseModel):
@@ -72,9 +70,9 @@ class JobApplicationShortResponse(BaseModel):
     job_title: str
     status: str
     description: Optional[str]
-    contacts_id: Optional[uuid.UUID]
+    contacts: Optional[List[ContactsDetailResponse]]
     source: str
-    updated_at: datetime
+    updated_at: Optional[datetime]
 
 
 class JobApplicationListResponse(BaseModel):
