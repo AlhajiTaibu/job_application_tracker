@@ -6,6 +6,7 @@ from starlette.middleware.cors import CORSMiddleware
 
 from app.admin import AdminRegistration, authentication_backend
 from app.api.v1.api import api_router
+from app.core.rate_limiting_middleware import SimpleRateLimitMiddleware
 from app.core.redis import redis_manager
 from app.core.config import settings
 from fastapi.templating import Jinja2Templates
@@ -31,6 +32,13 @@ app.add_middleware(
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
+)
+
+app.add_middleware(
+    SimpleRateLimitMiddleware,
+    exclude_paths=["/docs", "/redoc", "/openapi.json"],
+    limit=settings.rate_limiter_limit,  # Allow 100 requests
+    window=60,  # Per minute
 )
 
 app.include_router(api_router, prefix="/api/v1")

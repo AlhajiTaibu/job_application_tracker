@@ -6,16 +6,19 @@ from app.core.config import settings
 class RedisManager:
     def __init__(self) -> None:
         self.redis_host = settings.redis_host
+        self.password = settings.redis_password
         self.redis_client: Optional[Redis] = None
 
     async def init_redis(self) -> None:
         self.redis_client = Redis(
             host=self.redis_host,
+            password=self.password,
             port=6379,
             db=1,
             decode_responses=False,
             socket_timeout=5,
             retry_on_timeout=True,
+            ssl=True,
             max_connections=20
         )
 
