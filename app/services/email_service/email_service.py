@@ -12,6 +12,16 @@ from fastapi.templating import Jinja2Templates
 from app.core.config import settings
 from app.core.logging_config import logger
 
+def encode_json_to_env(key_name, data_dict):
+    encoded_bytes = base64.b64encode(data_dict.encode('utf-8'))
+    base64_string = encoded_bytes.decode('utf-8')
+
+    env_path = find_dotenv()
+    if not env_path:
+        with open(".env", "w") as f: pass
+        env_path = ".env"
+    set_key(env_path, key_name, base64_string)
+    print(f"Successfully wrote {key_name} to .env")
 
 class Auth:
     def __init__(self, scopes, client_secret_config, application_name):
@@ -29,15 +39,10 @@ class Auth:
         try:
             creds = None
 
-            # Ensure the directory exists
-
-            credential_dir = os.path.dirname(self.token_path)
-            if not os.path.exists(credential_dir):
-                os.makedirs(credential_dir)
-
-            # Check for existing token
-            if os.path.exists(self.token_path):
-                creds = Credentials.from_authorized_user_file(self.token_path, self.scopes)
+            if settings.GMAIL_TOKEN_JSON_B64:
+                cred_string = base64.b64decode(settings.GMAIL_TOKEN_JSON_B64)
+                cred_dict = json.loads(cred_string)
+                creds = Credentials.from_authorized_user_info(cred_dict)
 
             # If there are no (valid) credentials, let the user log in.
             if not creds or not creds.valid:
@@ -49,13 +54,11 @@ class Auth:
                     # run_local_server handles the old tools.run_flow logic automatically
                     creds = flow.run_local_server(port=0)
 
-                # Save the credentials for the next run
-                with open(self.token_path, 'w') as token:
-                    token.write(creds.to_json())
+                encode_json_to_env("GMAIL_TOKEN_JSON_B64", creds.to_json())
 
             return creds
         except Exception as error:
-            logger.error(error)
+            print(error)
 
     def get_service(self, api_name='gmail', version='v1'):
         """Helper to directly return the API service object"""
