@@ -7,9 +7,9 @@ echo "Waiting for postgres..."
 
 # Use a simple loop to check if the port is open
 # 'db' is the service name from your docker-compose
-while ! nc -z db 5432; do
-  sleep 0.1
-done
+#while ! nc -z db 5432; do
+#  sleep 0.1
+#done
 
 echo "PostgreSQL started"
 
