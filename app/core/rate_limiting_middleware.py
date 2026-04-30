@@ -16,7 +16,7 @@ class SimpleRateLimitMiddleware(BaseHTTPMiddleware):
             host=settings.redis_host,
             password=settings.redis_password,
             port=6379,
-            db=1,
+            db=0,
             socket_timeout=5,
             retry_on_timeout=True,
             ssl=True if settings.is_prod else False,
