@@ -41,7 +41,7 @@ ENV PATH="/workspace/.venv/bin:$PATH" \
     PYTHONUNBUFFERED=1
 
 COPY entrypoint.sh /entrypoint.sh
-
+RUN chmod +x entrypoint.sh
+CMD ["./entrypoint.sh"]
 #ENTRYPOINT ["sh", "/entrypoint.sh"]
-CMD ["uv", "run", "./entrypoint.sh"]
 #CMD ["python", "-m", "uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "7860", "--reload"]
