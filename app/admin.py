@@ -5,7 +5,8 @@ from starlette.requests import Request
 
 from app.core.config import settings
 from app.models.documents import Documents
-from app.models.job_application import JobApplication, Contacts, Interview, JobApplicationStatusHistory, JobTask
+from app.models.job_application import JobApplication, Contacts, Interview, JobApplicationStatusHistory, JobTask, \
+    NoteLog
 from app.models.notification import NotificationToken
 from app.models.user import User, Profile
 from sqladmin.filters import BooleanFilter, StaticValuesFilter, AllUniqueStringValuesFilter
@@ -73,16 +74,21 @@ class JobApplicationStatusHistoryAdmin(ModelView, model=JobApplicationStatusHist
 class ContactsAdmin(ModelView, model=Contacts):
     can_delete = False
     name_plural = "Contacts"
-    column_list = ["id", "name", "email", ]
+    column_list = ["id", "name", "email", "relationship_type", "role" ]
     column_searchable_list = ["name", "email"]
     column_filters = [
         StaticValuesFilter(
-            column=Contacts.role,
+            column=Contacts.relationship_type,
             values=[("recruiter", "Recruiter"), ("employee", "Employee"), ("hiring manager", "Hiring Manager"),
                     ("referral", "Referral")]
         )
     ]
     icon = "fa-solid fa-phone"
+
+class NoteLogAdmin(ModelView, model=NoteLog):
+    can_delete = False
+    column_list = ["id", "contacts_id", "notes"]
+    icon = "fa-solid fa-sticky-note"
 
 
 class InterviewAdmin(ModelView, model=Interview):
@@ -178,6 +184,7 @@ class AdminRegistration:
         admin.add_view(JobApplicationAdmin)
         admin.add_view(JobApplicationStatusHistoryAdmin)
         admin.add_view(ContactsAdmin)
+        admin.add_view(NoteLogAdmin)
         admin.add_view(InterviewAdmin)
         admin.add_view(DocumentAdmin)
         admin.add_view(NotificationTokenAdmin)

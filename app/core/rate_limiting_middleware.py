@@ -17,15 +17,15 @@ class SimpleRateLimitMiddleware(BaseHTTPMiddleware):
             password=settings.redis_password,
             port=6379,
             db=1,
-            decode_responses=False,
             socket_timeout=5,
             retry_on_timeout=True,
-            ssl=True,
+            ssl=True if settings.is_prod else False,
+            decode_responses=True if settings.is_prod else False,
             max_connections=20
         )
         self.limit = limit
         self.window = window
-        self.exclude_paths = exclude_paths or ["/docs", "/redoc", "/openapi.json", "/health"]
+        self.exclude_paths = exclude_paths or ["/docs", "/redoc", "/openapi.json", "/health", "/admin"]
 
     async def dispatch(self, request: Request, call_next):
         if request.url.path in self.exclude_paths:
