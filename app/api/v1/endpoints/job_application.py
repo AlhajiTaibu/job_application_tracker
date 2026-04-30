@@ -10,7 +10,7 @@ from app.core.logging_config import logger
 from app.crud import crud_job_application
 from app.models.user import User
 from app.schemas.job_application import JobApplicationResponse, JobApplicationListResponse, JobApplicationCreate, \
-    JobApplicationUpdate, ApiResponse, JobFilterParams
+    JobApplicationUpdate, ApiResponse, JobFilterParams, JobApplicationStatusTransition, JobApplicationStatusResponse
 
 router = APIRouter()
 
@@ -82,6 +82,22 @@ async def job_application_list(
         if not user.is_active:
             raise HTTPException(status_code=403, detail="Forbidden")
         return crud_job_application.get_job_applications(user=user, db=db, filters=filters, limit=limit, cursor=cursor)
+    except Exception as error:
+        logger.error(error)
+        raise HTTPException(status_code=400, detail=str(error))
+
+
+@router.post("/transition/{job_id}", response_model=ApiResponse[JobApplicationStatusResponse])
+async def job_application_status_transition(
+        user: Annotated[User, Depends(get_current_user)],
+        db: Annotated[Session, Depends(get_db)],
+        job_id: str,
+        data: JobApplicationStatusTransition
+):
+    try:
+        if not user.is_active:
+            raise HTTPException(status_code=403, detail="Forbidden")
+        return crud_job_application.transition_job_application_status(db=db, job_id=job_id, data=data)
     except Exception as error:
         logger.error(error)
         raise HTTPException(status_code=400, detail=str(error))

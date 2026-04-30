@@ -5,7 +5,8 @@ from starlette.requests import Request
 
 from app.core.config import settings
 from app.models.documents import Documents
-from app.models.job_application import JobApplication, Contacts, Interview
+from app.models.job_application import JobApplication, Contacts, Interview, JobApplicationStatusHistory
+from app.models.notification import NotificationToken
 from app.models.user import User
 from sqladmin.filters import BooleanFilter, StaticValuesFilter, AllUniqueStringValuesFilter
 
@@ -50,13 +51,23 @@ class JobApplicationAdmin(ModelView, model=JobApplication):
     column_filters = [
         StaticValuesFilter(
             column=JobApplication.status,
-            values=[("saved", "Saved"), ("applied", "Applied"), ("screening", "Screening"),
+            values=[("saved", "Saved"), ("applied", "Applied"), ("assessment", "Assessment"), ("screening", "Screening"),
                     ("interviewing", "Interviewing"), ("offer", "Offer"), ("accepted", "Accepted"),
-                    ("rejected", "Rejected"), ("withdrawn", "Withdrawn")]
+                    ("rejected", "Rejected"), ("withdrawn", "Withdrawn"), ("stale", "Stale")]
         ),
         AllUniqueStringValuesFilter(column=JobApplication.source)
     ]
     icon = "fa-solid fa-briefcase"
+
+
+class JobApplicationStatusHistoryAdmin(ModelView, model=JobApplicationStatusHistory):
+    name_plural = "Application Status History"
+    can_delete = False
+    can_edit = False
+    can_create = False
+    column_list = ["id", "job_application_id", "from_status", "to_status", "reason", "created_at"]
+    column_searchable_list = ["job_application_id", "reason"]
+    icon = "fa-solid fa-history"
 
 
 class ContactsAdmin(ModelView, model=Contacts):
@@ -114,10 +125,25 @@ class DocumentAdmin(ModelView, model=Documents):
     }
 
 
+class NotificationTokenAdmin(ModelView, model=NotificationToken):
+    can_delete = False
+    can_edit = False
+    column_list = ["id", "device_type", "created_at"]
+    column_filters = [
+        StaticValuesFilter(
+            column=NotificationToken.device_type,
+            values=[("web", "Web"), ("mobile", "Mobile")]
+        )
+    ]
+    icon = "fa-solid fa-mobile-screen-button"
+
+
 class AdminRegistration:
     def __init__(self, admin: Admin):
         admin.add_view(UserAdmin)
         admin.add_view(JobApplicationAdmin)
+        admin.add_view(JobApplicationStatusHistoryAdmin)
         admin.add_view(ContactsAdmin)
         admin.add_view(InterviewAdmin)
         admin.add_view(DocumentAdmin)
+        admin.add_view(NotificationTokenAdmin)

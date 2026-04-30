@@ -26,4 +26,5 @@ dependencies = [
     "sqladmin>=0.25.0",
     "wtforms>=3.1.2",
     "itsdangerous>=2.2.0",
+    "firebase-admin>=7.4.0",
 ]
