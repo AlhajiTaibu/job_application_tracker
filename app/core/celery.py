@@ -36,6 +36,12 @@ celery_app.conf.update(
     task_track_started=True,
     worker_pool="threads",
     worker_concurrency=4,
-    worker_prefetch_multiplier=1 # Prevents one worker from hogging all tasks
+    worker_prefetch_multiplier=1,
+    broker_use_ssl={
+        "ssl_cert_reqs": "CERT_NONE"  # or ssl.CERT_REQUIRED
+    },
+    redis_backend_use_ssl={
+        "ssl_cert_reqs": "CERT_NONE"
+    }
 )
 
