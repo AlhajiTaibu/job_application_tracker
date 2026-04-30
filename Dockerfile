@@ -35,7 +35,7 @@ COPY . .
 RUN chown -R appuser:appuser /workspace
 
 USER appuser
-EXPOSE 8080
+EXPOSE 7860
 
 ENV PATH="/workspace/.venv/bin:$PATH" \
     PYTHONUNBUFFERED=1
