@@ -40,6 +40,10 @@ admin = Admin(app, engine, title=settings.PROJECT_NAME, authentication_backend=a
 
 AdminRegistration(admin)
 
+@app.get("/")
+def root():
+    return {"status": "ok", "app": "Job Tracker API"}
+
 @app.get("/health")
 def health():
     return {"status": "ok"}
