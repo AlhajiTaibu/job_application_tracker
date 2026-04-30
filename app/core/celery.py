@@ -12,12 +12,24 @@ celery_app = Celery(
     include=['app.tasks.email_tasks', 'app.tasks.job_tasks', 'app.tasks.document_tasks']
 )
 
-celery_app.autodiscover_tasks(['app.tasks'])
+celery_app.autodiscover_tasks()
 
 
 celery_app.conf.beat_schedule = {
     'flag_overdue_tasks': {
         'task': 'app.tasks.job_tasks.flag_overdue_tasks',
+        'schedule': 86400.0,  # Run daily
+    },
+    'send_task_reminders': {
+        'task': 'app.tasks.job_tasks.send_task_reminders',
+        'schedule': 86400.0,  # Run daily
+    },
+    'snooze_tasks': {
+        'task': 'app.tasks.job_tasks.snooze_tasks',
+        'schedule': 86400.0,  # Run daily
+    },
+    'mark_job_application_stale': {
+        'task': 'app.tasks.job_application.mark_stale_applications',
         'schedule': 86400.0,  # Run daily
     }
     # 'monthly-invoice-report': {

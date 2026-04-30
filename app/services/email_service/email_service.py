@@ -14,16 +14,6 @@ from fastapi.templating import Jinja2Templates
 from app.core.config import settings
 from app.core.logging_config import logger
 
-def encode_json_to_env(key_name, data_dict):
-    encoded_bytes = base64.b64encode(data_dict.encode('utf-8'))
-    base64_string = encoded_bytes.decode('utf-8')
-
-    env_path = find_dotenv()
-    if not env_path:
-        with open(".env", "w") as f: pass
-        env_path = ".env"
-    set_key(env_path, key_name, base64_string)
-    print(f"Successfully wrote {key_name} to .env")
 
 class Auth:
     def __init__(self, scopes, client_secret_config, application_name):
@@ -56,11 +46,11 @@ class Auth:
                     # run_local_server handles the old tools.run_flow logic automatically
                     creds = flow.run_local_server(port=0)
 
-                encode_json_to_env("GMAIL_TOKEN_JSON_B64", creds.to_json())
+                self.encode_json_to_env("GMAIL_TOKEN_JSON_B64", creds.to_json())
 
             return creds
         except Exception as error:
-            print(error)
+            logger.error(error)
 
     def get_service(self, api_name='gmail', version='v1'):
         """Helper to directly return the API service object"""
@@ -70,6 +60,16 @@ class Auth:
         except Exception as error:
             logger.error(error)
 
+    def encode_json_to_env(self, key_name, data_dict):
+        encoded_bytes = base64.b64encode(data_dict.encode('utf-8'))
+        base64_string = encoded_bytes.decode('utf-8')
+
+        env_path = find_dotenv()
+        if not env_path:
+            with open(".env", "w") as f: pass
+            env_path = ".env"
+        set_key(env_path, key_name, base64_string)
+        print(f"Successfully wrote {key_name} to .env")
 
 SCOPES=["https://www.googleapis.com/auth/gmail.send","openid", "https://www.googleapis.com/auth/userinfo.email"]
 CLIENT_SECRET_CONFIG = {
