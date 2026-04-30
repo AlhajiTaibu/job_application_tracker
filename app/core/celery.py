@@ -1,5 +1,6 @@
 from celery import Celery
 from celery.schedules import crontab
+import ssl
 
 from app.core.config import settings
 
@@ -38,10 +39,10 @@ celery_app.conf.update(
     worker_concurrency=4,
     worker_prefetch_multiplier=1,
     broker_use_ssl={
-        "ssl_cert_reqs": "CERT_NONE"  # or ssl.CERT_REQUIRED
+        "ssl_cert_reqs": ssl.CERT_NONE # or ssl.CERT_REQUIRED
     },
     redis_backend_use_ssl={
-        "ssl_cert_reqs": "CERT_NONE"
+        "ssl_cert_reqs": ssl.CERT_NONE
     }
 )
 
