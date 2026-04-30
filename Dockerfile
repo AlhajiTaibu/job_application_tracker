@@ -35,7 +35,7 @@ COPY . .
 RUN chown -R appuser:appuser /workspace
 
 USER appuser
-EXPOSE 8080
+EXPOSE 7860
 
 ENV PATH="/workspace/.venv/bin:$PATH" \
     PYTHONUNBUFFERED=1
@@ -43,4 +43,4 @@ ENV PATH="/workspace/.venv/bin:$PATH" \
 COPY entrypoint.sh /entrypoint.sh
 
 ENTRYPOINT ["sh", "/entrypoint.sh"]
-CMD ["python", "-m", "uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8080", "--reload"]
+CMD ["python", "-m", "uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "7860", "--reload"]
