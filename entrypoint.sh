@@ -15,7 +15,17 @@ echo "PostgreSQL started"
 
 # Run migrations
 echo "Applying database migrations..."
+alembic stamp head
 alembic -c app/alembic.ini upgrade head
+
+uv run uvicorn app.main:app --host 0.0.0.0 --port 7860 --reload &
+
+# 2. Start Celery Worker
+# Note the module path syntax
+uv run celery -A app.core.celery:celery_app worker --loglevel=info --concurrency=1 &
+
+# 3. Start Celery Beat
+uv run celery -A app.core.celery:celery_app beat --loglevel=info --schedule=/tmp/celerybeat-schedule &
 
 # Start the actual application
 echo "Starting FastAPI..."
