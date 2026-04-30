@@ -41,5 +41,6 @@ class Settings(BaseSettings):
     gmail_token_json_b64: str
     firebase_credentials_base64: str
     rate_limiter_limit: int
+    is_prod: bool
 
 settings = Settings()

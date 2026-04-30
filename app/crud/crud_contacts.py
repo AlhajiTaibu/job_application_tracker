@@ -1,10 +1,11 @@
-from pydantic import validate_email
 from fastapi import HTTPException
+from pydantic import validate_email
+from sqlalchemy import select, desc, asc, func, and_, nulls_last
 from sqlalchemy.orm import Session
 
 from app.core.logging_config import logger
-from app.models.job_application import Contacts, JobApplication
-from app.schemas.contacts import ContactsCreate, ContactsUpdate, ContactsLinkJobApplication
+from app.models.job_application import Contacts, JobApplication, NoteLog
+from app.schemas.contacts import ContactsCreate, ContactsUpdate, ContactsLinkJobApplication, ContactsFilterParams
 from app.schemas.job_application import ApiResponse
 
 
@@ -13,12 +14,16 @@ def create_contacts(data: ContactsCreate, user_id: str):
         contacts_instance = Contacts(
             name=data.name,
             email=data.email,
+            company=data.company,
+            relationship_type=data.relationship_type,
             role=data.role,
-            notes=data.notes,
             linkedIn_url=data.linkedIn_url,
             user_id=user_id
         )
         contacts_instance.save_to_db()
+        if data.notes:
+            note = NoteLog(notes=data.notes, contacts_id=contacts_instance.id)
+            note.save_to_db()
         return {
             "success": True,
             "message": "Contact created successfully",
@@ -47,8 +52,14 @@ def update_contacts(data: ContactsUpdate, db: Session, contact_id: str):
             if email:
                 db_contact.email = data.email
         db_contact.role = data.role if data.role else db_contact.role
-        db_contact.notes = data.notes if data.notes else db_contact.notes
         db_contact.linkedIn_url = data.linkedIn_url if data.linkedIn_url else db_contact.linkedIn_url
+        if data.company:
+            db_contact.company = data.company
+        if data.relationship_type:
+            db_contact.relationship_type = data.relationship_type
+        if data.notes:
+            note = NoteLog(notes=data.notes, contacts_id=db_contact.id)
+            note.save_to_db()
         db.commit()
         db.refresh(db_contact)
         return {
@@ -76,9 +87,26 @@ def get_contacts_by_id(contact_id: str, user_id: str, db: Session):
         raise HTTPException(status_code=404, detail="Error getting contact")
 
 
-def get_contacts(user_id: str, db: Session, limit: int):
+def get_contacts(user_id: str, db: Session, limit: int, filters: ContactsFilterParams):
     try:
-        db_contacts = db.query(Contacts).filter(Contacts.user_id == user_id).limit(limit).all()
+        latest_note_sub = (
+            select(NoteLog.contacts_id, func.max(NoteLog.created_at).label("latest_note"))
+            .group_by(NoteLog.contacts_id)
+            .subquery()
+        )
+
+        stmt = (
+            select(Contacts)
+            .outerjoin(latest_note_sub, Contacts.id == latest_note_sub.c.contacts_id)
+            .where(Contacts.user_id == user_id)
+            .order_by(latest_note_sub.c.latest_note.desc().nulls_last(), Contacts.name.asc())
+            .limit(limit + 1)
+        )
+
+        if filters.q:
+            stmt = stmt.where(Contacts.company.ilike(f"%{filters.q}%"))
+
+        db_contacts = db.execute(stmt).scalars().all()
         results = db_contacts if db_contacts else []
         return ApiResponse(success=True, payload={"data": results})
     except Exception as error:

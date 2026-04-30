@@ -1,4 +1,4 @@
-from typing import Annotated
+from typing import Annotated, Optional
 
 from fastapi import HTTPException
 from fastapi.params import Depends
@@ -10,7 +10,7 @@ from app.core.logging_config import logger
 from app.crud import crud_contacts
 from app.models.user import User
 from app.schemas.contacts import ContactsCreate, ContactsUpdate, ContactsDetailResponse, \
-    ContactsListResponse, ContactsLinkJobApplication
+    ContactsListResponse, ContactsLinkJobApplication, ContactsFilterParams
 from app.schemas.job_application import ApiResponse
 
 router = APIRouter()
@@ -62,12 +62,13 @@ async def contacts(
 async def contacts(
         user: Annotated[User, Depends(get_current_user)],
         db: Annotated[Session, Depends(get_db)],
+        filters: Annotated[ContactsFilterParams, Depends()],
         limit: int = 20
 ):
     try:
         if not user.is_active:
             raise HTTPException(status_code=403, detail="Forbidden")
-        return crud_contacts.get_contacts(user_id=user.id, db=db, limit=limit)
+        return crud_contacts.get_contacts(user_id=user.id, db=db, limit=limit, filters=filters)
     except Exception as error:
         logger.error(error)
         raise HTTPException(status_code=400, detail=str(error))
