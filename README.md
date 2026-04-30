@@ -1,2 +1,12 @@
-# job_application_tracker
-Job Application Tracker
+---
+title: Job Tracker App Celery Worker and Beat
+emoji: 💼
+colorFrom: blue
+colorTo: green
+sdk: docker
+pinned: false
+---
+
+# Job Tracker App
+
+A FastAPI-based job application tracker with Celery workers and beat scheduler.
