@@ -15,10 +15,10 @@ class RedisManager:
             password=self.password,
             port=6379,
             db=1,
-            decode_responses=False,
+            decode_responses=True if settings.is_prod else False,
             socket_timeout=5,
             retry_on_timeout=True,
-            ssl=True,
+            ssl=True if settings.is_prod else False,
             max_connections=20
         )
 

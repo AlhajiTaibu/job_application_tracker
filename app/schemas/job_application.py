@@ -63,6 +63,11 @@ class JobApplicationResponse(BaseModel):
     interviews: Optional[List[InterviewDetailShort]]
     updated_at: Optional[datetime]
 
+class ContactsDetailTruncatedResponse(BaseModel):
+    id: uuid.UUID
+    name: str
+    email: Optional[str]
+
 
 class JobApplicationShortResponse(BaseModel):
     id: uuid.UUID
@@ -70,7 +75,7 @@ class JobApplicationShortResponse(BaseModel):
     job_title: str
     status: str
     description: Optional[str]
-    contacts: Optional[List[ContactsDetailResponse]]
+    contacts: Optional[List[ContactsDetailTruncatedResponse]]
     source: str
     updated_at: Optional[datetime]
 

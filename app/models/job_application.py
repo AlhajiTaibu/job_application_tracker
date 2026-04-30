@@ -1,7 +1,7 @@
 import uuid
 from enum import Enum
 
-from sqlalchemy import Column, String, DateTime, func, Boolean, ForeignKey, Date, Time, Integer, Table
+from sqlalchemy import Column, String, DateTime, func, Boolean, ForeignKey, Date, Time, Integer, Table, JSON
 from sqlalchemy.dialects.postgresql.base import UUID
 from sqlalchemy.orm import relationship
 
@@ -100,14 +100,45 @@ class Contacts(Base):
     user_id = Column(UUID, ForeignKey(User.id), nullable=False, index=True)
     job_applications = relationship("JobApplication", secondary=association_table, back_populates="contacts")
     name = Column(String(255), nullable=False)
+    company = Column(String(50))
+    relationship_type = Column(String(50))
+    notes = relationship("NoteLog", back_populates="contact")
     email = Column(String(255))
     role = Column(String(15))
     linkedIn_url = Column(String)
-    notes = Column(String)
+    updated_at = Column(DateTime, default=func.now(), onupdate=func.now())
     created_at = Column(DateTime, default=func.now())
 
     def __repr__(self):
         return f"Contacts: {self.name} email: {self.email} -> {self.role}"
+
+    def save_to_db(self):
+        db = SessionLocal()
+        try:
+            db.add(self)
+            db.commit()
+            db.refresh(self)
+        finally:
+            db.close()
+
+
+class NoteLog(Base):
+    __tablename__ = "note_log"
+    id = Column(
+        UUID(as_uuid=True),
+        primary_key=True,
+        default=uuid.uuid4,
+        index=True,
+        nullable=False
+    )
+    contacts_id = Column(UUID, ForeignKey("contacts.id", ondelete="CASCADE"), index=True, nullable=False)
+    contact = relationship("Contacts", back_populates="notes")
+    notes = Column(String)
+    updated_at = Column(DateTime, default=func.now(), onupdate=func.now())
+    created_at = Column(DateTime, default=func.now())
+
+    def __repr__(self):
+        return f"Notes Log: {self.contacts_id} notes: {self.notes}"
 
     def save_to_db(self):
         db = SessionLocal()

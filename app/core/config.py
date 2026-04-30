@@ -40,5 +40,6 @@ class Settings(BaseSettings):
     max_file_size: int
     firebase_credentials_base64: str
     rate_limiter_limit: int
+    is_prod: bool
 
 settings = Settings()
