@@ -6,7 +6,7 @@ echo "Waiting for postgres..."
 echo "PostgreSQL started"
 
 echo "Applying database migrations..."
-alembic -c app/alembic.ini upgrade head
+#alembic -c app/alembic.ini upgrade head
 
 echo "Starting FastAPI..."
 uvicorn app.main:app --host 0.0.0.0 --port 7860 &
