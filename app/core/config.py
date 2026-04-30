@@ -21,6 +21,7 @@ class Settings(BaseSettings):
     reset_password_token_expire_minutes: int
     refresh_token_expire_minutes: int
     redis_host: str
+    redis_password: str
     celery_broker_url: str
     celery_result_backend: str
     PROJECT_NAME: str = "Job Application Tracker"
@@ -38,5 +39,6 @@ class Settings(BaseSettings):
     file_storage_region_name: str
     max_file_size: int
     firebase_credentials_base64: str
+    rate_limiter_limit: int
 
 settings = Settings()
