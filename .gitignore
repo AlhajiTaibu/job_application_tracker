@@ -208,4 +208,5 @@ __marimo__/
 
 /app/services/email_service/.credentials
 .env.local
+.env.prod
 *.json
