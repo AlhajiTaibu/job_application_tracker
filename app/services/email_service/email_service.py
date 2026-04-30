@@ -39,8 +39,8 @@ class Auth:
         try:
             creds = None
 
-            if settings.GMAIL_TOKEN_JSON_B64:
-                cred_string = base64.b64decode(settings.GMAIL_TOKEN_JSON_B64)
+            if settings.gmail_token_json_b64:
+                cred_string = base64.b64decode(settings.gmail_token_json_b64)
                 cred_dict = json.loads(cred_string)
                 creds = Credentials.from_authorized_user_info(cred_dict)
 
