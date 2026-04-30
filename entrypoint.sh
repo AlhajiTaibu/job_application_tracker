@@ -15,7 +15,7 @@ echo "PostgreSQL started"
 
 # Run migrations
 echo "Applying database migrations..."
-alembic stamp head
+alembic -c app/alembic.ini stamp head
 alembic -c app/alembic.ini upgrade head
 
 uv run uvicorn app.main:app --host 0.0.0.0 --port 7860 --reload &
