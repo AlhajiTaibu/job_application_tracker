@@ -6,7 +6,9 @@ from google_auth_oauthlib.flow import InstalledAppFlow
 from googleapiclient.discovery import build
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
+from dotenv import find_dotenv, set_key
 import base64
+import json
 from fastapi.templating import Jinja2Templates
 
 from app.core.config import settings
