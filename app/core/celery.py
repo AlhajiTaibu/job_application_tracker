@@ -9,7 +9,7 @@ celery_app = Celery(
     "worker",
     broker=settings.celery_broker_url,
     backend=settings.celery_result_backend,
-    include=['app.tasks.user_tasks', 'app.tasks.job_tasks', 'app.tasks.document_tasks']
+    include=['app.tasks.user_tasks', 'app.tasks.job_tasks', 'app.tasks.document_tasks', 'app.tasks.job_application']
 )
 
 celery_app.autodiscover_tasks()
