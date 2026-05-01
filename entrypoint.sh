@@ -9,7 +9,7 @@ echo "Applying database migrations..."
 alembic -c app/alembic.ini upgrade head
 
 echo "Starting FastAPI..."
-uvicorn app.main:app --host 0.0.0.0 --port 7860 --reload &
+uvicorn app.main:app --host 0.0.0.0 --port 7860 --reload --proxy-headers --forwarded-allow-ips='*' &
 
 echo "Starting Celery Worker..."
 celery -A app.core.celery:celery_app worker --loglevel=info --concurrency=1 --pool=threads &
