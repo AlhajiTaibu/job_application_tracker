@@ -6,7 +6,7 @@ celery_app = Celery(
     "worker",
     broker=settings.celery_broker_url,
     backend=settings.celery_result_backend,
-    include=['app.tasks.user_tasks', 'app.tasks.job_tasks', 'app.tasks.document_tasks', 'app.tasks.job_application']
+    include=['app.tasks.user_tasks', 'app.tasks.job_tasks', 'app.tasks.document_tasks', 'app.tasks.job_application',]
 )
 
 celery_app.autodiscover_tasks(['app.tasks'])
@@ -26,7 +26,7 @@ celery_app.conf.beat_schedule = {
         'schedule': 86400.0,  # Run daily
     },
     'mark_job_application_stale': {
-        'task': 'app.tasks.job_application.mark_stale_applications',
+        'task': 'app.tasks.job_application.mark_job_application_stale',
         'schedule': 86400.0,  # Run daily
     }
     # 'monthly-invoice-report': {
