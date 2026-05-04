@@ -97,7 +97,7 @@ def snooze_tasks():
     try:
         now = datetime.now()
         follow_up_tasks = db.query(JobTask).filter(
-            JobTask.next_due_date < now,
+            JobTask.due_date < now,
             JobTask.task_type == TaskType.FOLLOW_UP,
             JobTask.status == TaskStatus.PENDING
         ).all()

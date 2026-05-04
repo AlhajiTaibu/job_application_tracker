@@ -1,5 +1,7 @@
 from datetime import datetime, timedelta
 
+from sqlalchemy import and_, or_
+
 from app.core.celery import celery_app
 from app.core.logging_config import logger
 from app.database import SessionLocal
@@ -21,8 +23,16 @@ def mark_job_application_stale():
         thirty_days_ago = datetime.now() - timedelta(days=30)
         job_apps = (db.query(JobApplication).
                     filter(JobApplication.updated_at < thirty_days_ago,
-                           JobApplication.status.contains("applied", "interviewing", "assessment", "screening"))
+                           and_(
+                               or_(
+                                   JobApplication.status=="applied",
+                                   JobApplication.status=="interviewing",
+                                   JobApplication.status=="assessment",
+                                   JobApplication.status=="screening"
+                               )
+                           ))
                     .all())
+        logger.info(f"affected rows: {len(job_apps)}")
         for job_app in job_apps:
             job_application_state_machine.transition_state(job_app, "stale", {"reason": "No activity in the last 30 days"})
             user_id = job_app.user_id
