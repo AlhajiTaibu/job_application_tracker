@@ -28,4 +28,6 @@ dependencies = [
     "itsdangerous>=2.2.0",
     "firebase-admin>=7.4.0",
     "pillow>=12.2.0",
+    "pandas>=3.0.2",
+    "numpy>=2.4.4",
 ]
