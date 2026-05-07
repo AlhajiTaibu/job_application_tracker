@@ -73,7 +73,7 @@ class EmailVerificationOTP(Base):
 
     def verify(self):
         if self.is_expired or self.is_verified:
-            raise HTTPException(status_code=400, detail="Invalid OTP")
+            raise Exception("Invalid OTP")
         self.is_verified = True
         self.verified_at = func.now()
         self.save_to_db()

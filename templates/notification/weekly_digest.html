@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+
+{% block title %}Job Application Weekly Digest{% endblock %}
+
+{% block header_title %}Job Application Tracker{% endblock %}
+{% block header_subtitle %}
+<div class="subtitle">Weekly Digest</div>
+{% endblock %}
+
+{% block content %}
+<h2>Your Weekly Digest</h2>
+<p>Hello {{ email }},</p>
+
+<div>
+    <p>This week: </p>
+    <table>
+        <tbody>
+        {% if data.this_week.applications_sent %}
+        <tr>
+            <td>Applications Sent</td>
+            <td>{{ data.this_week.applications_sent }}</td>
+        </tr>
+        {% endif %}
+        {% if data.this_week.response_received %}
+        <tr>
+            <td>Response Received</td>
+            <td>{{ data.this_week.response_received }}</td>
+        </tr>
+        {% endif %}
+        {% if data.this_week.interviews_completed_count%}
+        <tr>
+            <td>Interview Completed</td>
+            <td>{{ data.this_week.interviews_completed_count }}</td>
+        </tr>
+        {% endif %}
+
+        {% if data.this_week.tasks_completed %}
+        <tr>
+            <td>Tasks Completed</td>
+            <td>{{ data.this_week.tasks_completed }}</td>
+        </tr>
+        {% endif %}
+
+        {% if data.this_week.overdue_tasks %}
+        <tr>
+            <td>Tasks Overdue</td>
+            <td>{{ data.this_week.overdue_tasks }}</td>
+        </tr>
+        {% endif %}
+        </tbody>
+    </table>
+</div>
+
+<div>
+    <p>Next week:</p>
+    <table>
+        {% if data.next_week.scheduled_interviews_count %}
+        <tr>
+            <td>Scheduled Interviews</td>
+            <td>{{data.next_week.scheduled_interviews_count}}</td>
+        </tr>
+        {% endif %}
+
+        {% if data.next_week.follow_up_due_applications %}
+        <tr>
+            <td>Application Follow-up Tasks Due</td>
+            <td>{{data.next_week.follow_up_due_applications}}</td>
+        </tr>
+        {% endif %}
+    </table>
+</div>
+{% if data.response_rate_compare %}
+<div>
+    <p>Your response rate this week ({{data.this_week.response_rate}}%) is {{data.response_rate_compare}} from last week
+        ({{data.this_week.last_week_response_rate}}%)</p>
+</div>
+{% endif %}
+{% endblock %}

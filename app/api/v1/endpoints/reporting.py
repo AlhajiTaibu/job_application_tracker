@@ -12,10 +12,11 @@ from app.models.user import User
 
 router = APIRouter()
 
+
 @router.get("/application-funnel")
 async def application_funnel(
-    user: Annotated[User, Depends(get_current_user)],
-    db: Annotated[Session, Depends(get_db)]
+        user: Annotated[User, Depends(get_current_user)],
+        db: Annotated[Session, Depends(get_db)]
 ):
     try:
         if not user:
@@ -28,8 +29,8 @@ async def application_funnel(
 
 @router.get("/time-in-stage-analytics")
 async def time_in_stage_analytics(
-    user: Annotated[User, Depends(get_current_user)],
-    db: Annotated[Session, Depends(get_db)]
+        user: Annotated[User, Depends(get_current_user)],
+        db: Annotated[Session, Depends(get_db)]
 ):
     try:
         if not user:
@@ -42,8 +43,8 @@ async def time_in_stage_analytics(
 
 @router.get("/source-analytics")
 async def source_analytics(
-    user: Annotated[User, Depends(get_current_user)],
-    db: Annotated[Session, Depends(get_db)]
+        user: Annotated[User, Depends(get_current_user)],
+        db: Annotated[Session, Depends(get_db)]
 ):
     try:
         if not user:
@@ -56,8 +57,8 @@ async def source_analytics(
 
 @router.get("/role-analytics")
 async def role_analytics(
-    user: Annotated[User, Depends(get_current_user)],
-    db: Annotated[Session, Depends(get_db)]
+        user: Annotated[User, Depends(get_current_user)],
+        db: Annotated[Session, Depends(get_db)]
 ):
     try:
         if not user:
@@ -67,3 +68,58 @@ async def role_analytics(
         logger.error(error)
         raise HTTPException(status_code=400, detail=str(error))
 
+
+@router.get("/weekly-application-activity")
+async def weekly_application_activity(
+        user: Annotated[User, Depends(get_current_user)],
+        db: Annotated[Session, Depends(get_db)]
+):
+    try:
+        if not user:
+            raise HTTPException(status_code=403, detail="Forbidden")
+        return await crud_reporting.weekly_application_activity(db=db, user_id=user.id)
+    except Exception as error:
+        logger.error(error)
+        raise HTTPException(status_code=400, detail=str(error))
+
+
+@router.get("/interview-analytics")
+async def interview_analytics(
+        user: Annotated[User, Depends(get_current_user)],
+        db: Annotated[Session, Depends(get_db)]
+):
+    try:
+        if not user:
+            raise HTTPException(status_code=403, detail="Forbidden")
+        return await crud_reporting.interview_analytics(db=db, user_id=user.id)
+    except Exception as error:
+        logger.error(error)
+        raise HTTPException(status_code=400, detail=str(error))
+
+
+@router.get("/follow-up-analytics")
+async def interview_analytics(
+        user: Annotated[User, Depends(get_current_user)],
+        db: Annotated[Session, Depends(get_db)]
+):
+    try:
+        if not user:
+            raise HTTPException(status_code=403, detail="Forbidden")
+        return await crud_reporting.follow_up_analytics(db=db, user_id=user.id)
+    except Exception as error:
+        logger.error(error)
+        raise HTTPException(status_code=400, detail=str(error))
+
+
+@router.get("/health-view-analytics")
+async def interview_analytics(
+        user: Annotated[User, Depends(get_current_user)],
+        db: Annotated[Session, Depends(get_db)]
+):
+    try:
+        if not user:
+            raise HTTPException(status_code=403, detail="Forbidden")
+        return await crud_reporting.health_view_analytics(db=db, user_id=user.id)
+    except Exception as error:
+        logger.error(error)
+        raise HTTPException(status_code=400, detail=str(error))

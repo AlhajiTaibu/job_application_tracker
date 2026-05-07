@@ -17,6 +17,7 @@ class JobTaskCreate(BaseModel):
 class JobTaskUpdate(BaseModel):
     name: Optional[str] = None
     status: Optional[Literal["pending", "completed", "snoozed", "cancelled"]] = None
+    task_type: Optional[Literal["follow_up", "confirm", "reminder", "thank_you", "review", "other"]] = None
     due_date: Optional[str] = None
 
 
@@ -25,7 +26,8 @@ class JobTaskDetail(BaseModel):
     job_application_id: Optional[uuid.UUID]
     name: str
     status: Literal["pending", "completed", "snoozed", "cancelled"]
-    due_date: datetime
+    task_type: Literal["follow_up", "confirm", "reminder", "thank_you", "review", "other"]
+    due_date: Optional[datetime]
     is_overdue: bool
 
 

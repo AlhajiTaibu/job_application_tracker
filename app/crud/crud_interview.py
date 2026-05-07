@@ -68,7 +68,7 @@ def update_interview(data: InterviewUpdate, interview_id: str, db: Session):
         db_interview.time = datetime.datetime.strptime(data.time, "%H:%M").time() if data.time else db_interview.time
         db.commit()
         db.refresh(db_interview)
-
+        db.close()
         if data.outcome:
             interview_state_machine.transition_state(db_interview, data.outcome)
 
