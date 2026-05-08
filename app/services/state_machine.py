@@ -107,6 +107,7 @@ class JobApplicationStateMachine:
             JobTask.job_application_id == job_app.id,
             JobTask.task_type == TaskType.FOLLOW_UP,
             JobTask.status == TaskStatus.PENDING).all()
+        self.db.close()
         for task in pending_tasks:
             task.status = TaskStatus.CANCELLED
             task.updated_at = datetime.now()
@@ -152,6 +153,7 @@ class JobApplicationStateMachine:
         pending_tasks = self.db.query(JobTask).filter(
             JobTask.job_application_id == job_app.id,
             JobTask.status == TaskStatus.PENDING).all()
+        self.db.close()
         for task in pending_tasks:
             task.status = TaskStatus.CANCELLED
             task.updated_at = datetime.now()
@@ -195,6 +197,7 @@ class JobApplicationStateMachine:
         pending_tasks = self.db.query(JobTask).filter(
             JobTask.job_application_id == job_app.id,
             JobTask.status == TaskStatus.PENDING).all()
+        self.db.close()
         for task in pending_tasks:
             task.status = TaskStatus.CANCELLED
             task.updated_at = datetime.now()
@@ -236,24 +239,28 @@ class InterviewStateMachine:
 
     def _handle_rejected(self, interview: Interview):
         job_app = self.db.query(JobApplication).filter(JobApplication.id == interview.job_application_id).first()
+        self.db.close()
         if job_app.status != "interviewing":
-            job_application_state_machine.transition_state(job_app, "interviewing", JobApplicationStatusTransitionType.SYSTEM)
+            job_application_state_machine.transition_state(job_app, "interviewing",
+                                                           JobApplicationStatusTransitionType.SYSTEM)
         job_application_state_machine.transition_state(job_app, "rejected", JobApplicationStatusTransitionType.SYSTEM)
 
     def _handle_withdrawn(self, interview: Interview):
         job_app = self.db.query(JobApplication).filter(JobApplication.id == interview.job_application_id).first()
+        self.db.close()
         if job_app.status != "interviewing":
-            job_application_state_machine.transition_state(job_app, "interviewing", JobApplicationStatusTransitionType.SYSTEM)
+            job_application_state_machine.transition_state(job_app, "interviewing",
+                                                           JobApplicationStatusTransitionType.SYSTEM)
         job_application_state_machine.transition_state(job_app, "withdrawn", JobApplicationStatusTransitionType.SYSTEM)
 
     def _handle_passed(self, interview):
         job_app = self.db.query(JobApplication).filter(JobApplication.id == interview.job_application_id).first()
+        self.db.close()
         if job_app.status != "interviewing":
-            job_application_state_machine.transition_state(job_app, "interviewing", JobApplicationStatusTransitionType.SYSTEM)
-        new_interview = Interview(
-            job_application_id=interview.job_application_id
-        )
-        new_interview.save_to_db()
+            job_application_state_machine.transition_state(job_app, "interviewing",
+                                                           JobApplicationStatusTransitionType.SYSTEM)
+        self._create_new_interview(interview)
+
         task_service.create_task(
             name=f"Send thank you email to {interview.interviewer_name}",
             description=f"Send thank you email to {interview.interviewer_name}",
@@ -273,8 +280,10 @@ class InterviewStateMachine:
 
     def _handle_waiting(self, interview):
         job_app = self.db.query(JobApplication).filter(JobApplication.id == interview.job_application_id).first()
+        self.db.close()
         if job_app.status != "interviewing":
-            job_application_state_machine.transition_state(job_app, "interviewing", JobApplicationStatusTransitionType.SYSTEM)
+            job_application_state_machine.transition_state(job_app, "interviewing",
+                                                           JobApplicationStatusTransitionType.SYSTEM)
         task_service.create_task(
             name=f"Send thank you email to {interview.interviewer_name}",
             description=f"Send thank you email to {interview.interviewer_name}",
@@ -283,6 +292,17 @@ class InterviewStateMachine:
             due_date=datetime.now() + timedelta(days=1),
             meta_data={"job_application_id": interview.job_application_id}
         )
+
+    def _create_new_interview(self, interview):
+        interviews = self.db.query(Interview).filter(Interview.job_application_id == interview.job_application_id).all()
+        can_create_new_interview = True if len(interviews) > 1 and interviews[-1].outcome == "passed" else False
+        if can_create_new_interview:
+            new_interview = Interview(
+                job_application_id=interview.job_application_id,
+                round=interview.round + 1,
+                outcome="scheduled"
+            )
+            new_interview.save_to_db()
 
 
 interview_state_machine = InterviewStateMachine()

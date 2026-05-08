@@ -6,6 +6,7 @@ from sqlalchemy import or_, and_
 from app.core.logging_config import logger
 from app.database import SessionLocal
 from app.models.job_application import JobTask, TaskType, TaskCreator, TaskStatus, JobApplication, SnoozeJobTask
+from app.schemas.job_task import JobTaskUpdate
 
 
 class TaskService:
@@ -16,7 +17,7 @@ class TaskService:
             self.db.close()
 
     def create_task(self, name: str, description: str, task_type: TaskType, created_by: TaskCreator,
-                    due_date: str = None, meta_data: Dict[str, Any] = None):
+                    due_date: datetime = None, meta_data: Dict[str, Any] = None):
         try:
             task = JobTask(
                 name=name,
@@ -25,7 +26,7 @@ class TaskService:
                 created_by=created_by
             )
             if due_date:
-                task.due_date = datetime.strptime(due_date, "%d/%m/%Y")
+                task.due_date = datetime.strptime(due_date, "%d/%m/%Y") if isinstance(due_date, str) else task.due_date
             if meta_data:
                 if "user_id" in meta_data:
                     task.user_id = meta_data["user_id"]
@@ -36,6 +37,7 @@ class TaskService:
                         raise Exception("Job Application not found")
                     task.job_application_id = meta_data["job_application_id"]
                     task.user_id = job.user_id
+            self.db.close()
             task.save_to_db()
             return {
                 "success": True,
@@ -46,16 +48,16 @@ class TaskService:
             logger.error(error)
             raise Exception("Error creating task")
 
-    def update_task(self, task_id: str, data: Dict[str, Any]):
+    def update_task(self, task_id: str, data: JobTaskUpdate):
         try:
             task = self.db.query(JobTask).filter(JobTask.id == task_id).first()
+            self.db.close()
             if not task:
                 raise Exception("Task not found")
-            task.name = data["name"] if "name" in data else task.name
-            task.description = data["description"] if "description" in data else task.description
-            task.due_date = datetime.strptime(data["due_date"], "%d/%m/%Y") if "due_date" in data else task.due_date
-            task.task_type = data["task_type"] if "task_type" in data else task.task_type
-            task.status = data["status"] if "status" in data else task.status
+            task.name = data.name if data.name in data else task.name
+            task.due_date = datetime.strptime(data.due_date, "%d/%m/%Y %H:%M") if data.due_date else task.due_date
+            task.task_type = data.task_type if data.task_type else task.task_type
+            task.status = data.status if data.status else task.status
             task.updated_at = datetime.now()
             task.save_to_db()
             return {
@@ -141,6 +143,7 @@ class TaskService:
     def snooze_task(self, task_id: str, period: int, snoozed_by: TaskCreator):
         try:
             task = self.db.query(JobTask).filter(JobTask.id == task_id).first()
+            self.db.close()
             if not task:
                 raise Exception("Task not found")
             task.status = TaskStatus.SNOOZED
@@ -148,6 +151,7 @@ class TaskService:
             task.updated_at = datetime.now()
             task.save_to_db()
             snooze_job_task = self.db.query(SnoozeJobTask).filter(SnoozeJobTask.task_id == task_id).first()
+            self.db.close()
             if not snooze_job_task:
                 new_snooze_job_task = SnoozeJobTask(task_id=task_id, snoozed_by=snoozed_by, snooze_period=task.due_date)
                 new_snooze_job_task.save_to_db()
@@ -165,6 +169,7 @@ class TaskService:
     def complete_task(self, task_id):
         try:
             task = self.db.query(JobTask).filter(JobTask.id == task_id).first()
+            self.db.close()
             if not task:
                 raise Exception("Task not found")
             task.status = TaskStatus.COMPLETED
@@ -181,6 +186,7 @@ class TaskService:
     def cancel_task(self, task_id):
         try:
             task = self.db.query(JobTask).filter(JobTask.id == task_id).first()
+            self.db.close()
             if not task:
                 raise Exception("Task not found")
             task.status = TaskStatus.CANCELLED
