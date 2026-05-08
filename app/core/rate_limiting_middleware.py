@@ -15,7 +15,8 @@ class SimpleRateLimitMiddleware(BaseHTTPMiddleware):
         self.redis = Redis(
             host=settings.redis_host,
             password=settings.redis_password,
-            port=6379,
+            port=settings.redis_port,
+            username=settings.redis_user,
             db=0,
             socket_timeout=5,
             retry_on_timeout=True,
