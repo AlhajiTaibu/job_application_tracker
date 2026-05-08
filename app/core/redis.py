@@ -12,7 +12,7 @@ class RedisManager:
         self.redis_user = settings.redis_user
         self.redis_client: Optional[Redis] = None
 
-    async def init_redis(self) -> None:
+    async def init_redis(self):
         self.redis_client = Redis(
             host=self.redis_host,
             password=self.password,
@@ -25,7 +25,7 @@ class RedisManager:
             ssl=True if settings.is_prod else False,
             max_connections=20
         )
-
+        return self.redis_client
     async def close_redis(self):
         """Cleanly close the pool."""
         if self.redis_client:
