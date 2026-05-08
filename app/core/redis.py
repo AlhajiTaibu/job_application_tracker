@@ -17,7 +17,7 @@ class RedisManager:
             host=self.redis_host,
             password=self.password,
             port=self.redis_port,
-            username=settings.redis_user,
+            username=self.redis_user,
             db=1,
             decode_responses=True if settings.is_prod else False,
             socket_timeout=5,
