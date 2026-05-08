@@ -12,23 +12,13 @@ from app.core.logging_config import logger
 class SimpleRateLimitMiddleware(BaseHTTPMiddleware):
     def __init__(self, app, limit: int, window: int, exclude_paths: list = None):
         super().__init__(app)
-        self.redis = Redis(
-            host=settings.redis_host,
-            password=settings.redis_password,
-            port=settings.redis_port,
-            username=settings.redis_user,
-            db=0,
-            socket_timeout=5,
-            retry_on_timeout=True,
-            ssl=True if settings.is_prod else False,
-            decode_responses=True if settings.is_prod else False,
-            max_connections=20
-        )
+        self.redis = None
         self.limit = limit
         self.window = window
         self.exclude_paths = exclude_paths or ["/docs", "/redoc", "/openapi.json", "/health", "/admin"]
 
     async def dispatch(self, request: Request, call_next):
+        self.redis = request.app.state.redis
         if request.url.path in self.exclude_paths:
             return await call_next(request)
         # --- IDEMPOTENCY LOGIC ---

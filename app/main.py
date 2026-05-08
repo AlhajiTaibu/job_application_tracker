@@ -16,11 +16,9 @@ from app.database import engine
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # Startup: Connect to Redis
-    await redis_manager.init_redis()
+    app.state.redis = await redis_manager.init_redis()
     yield
-    # Shutdown: Close connection
-    await redis_manager.close_redis()
+    await app.state.redis.close()
 
 app = FastAPI(title=settings.PROJECT_NAME, version=settings.PROJECT_VERSION, lifespan=lifespan)
 
