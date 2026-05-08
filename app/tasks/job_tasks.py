@@ -3,13 +3,14 @@ from sqlalchemy import update, or_, select
 from app.core.celery import celery_app
 from app.core.logging_config import logger
 from app.database import SessionLocal
-from app.models.job_application import JobTask, TaskStatus, TaskType, TaskCreator, JobApplication
-from datetime import datetime
+from app.models.job_application import JobTask, TaskStatus, TaskType, TaskCreator
+from datetime import datetime, timedelta
 
 from app.models.user import User, Profile, NotificationType
 from app.services.email_service.email_service import send_email
 from app.services.firebase_service import push_notification_service
 from app.services.task_service import task_service
+from app.crud.crud_reporting import weekly_digest
 
 
 @celery_app.task()
@@ -45,7 +46,9 @@ def send_task_reminders():
 
         for task in overdue_tasks:
             user_id = task.user_id
-            stmt = select(User.id, User.email, Profile.notification_type).join(Profile, User.id == Profile.user_id).where(User.id==user_id)
+            stmt = select(User.id, User.email, Profile.notification_type).join(Profile,
+                                                                               User.id == Profile.user_id).where(
+                User.id == user_id)
             user = db.execute(stmt).first()
             message = resolve_notification_message(task.task_type)
             subject = "Job Application Notification"
@@ -86,7 +89,6 @@ def resolve_notification_message(task_type: TaskType):
     return message
 
 
-
 @celery_app.task()
 def snooze_tasks():
     """
@@ -104,6 +106,36 @@ def snooze_tasks():
 
         for task in follow_up_tasks:
             task_service.snooze_task(task.id, 7, TaskCreator.SYSTEM)
+    except Exception as error:
+        logger.error(error)
+    finally:
+        db.close()
+
+
+@celery_app.task()
+def weekly_user_report():
+    db = SessionLocal()
+    try:
+        users = db.query(User).all()
+        period = datetime.now()
+        for user in users:
+            result = weekly_digest(db, user.id, period)
+            if result:
+                this_week_response_rate = result['this_week']['response_rate']
+                last_week_response_rate = result['this_week']['last_week_response_rate']
+                if not this_week_response_rate == 0 and last_week_response_rate == 0:
+                    result['response_rate_compare'] = 'up' if this_week_response_rate > last_week_response_rate else 'down'
+                    result['response_rate_compare'] = 'same' if this_week_response_rate == last_week_response_rate else result['response_rate_compare']
+                send_email(
+                    recipient=user.email,
+                    subject="Your job search this week",
+                    html="notification/weekly_digest.html",
+                    context={
+                        "email": user.email,
+                        "data": result
+                    }
+                )
+                logger.info(f"Sending weekly digest to user: {user.email}")
     except Exception as error:
         logger.error(error)
     finally:

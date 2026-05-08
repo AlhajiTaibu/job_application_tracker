@@ -1,5 +1,7 @@
 from app.core.celery import celery_app
 from app.core.logging_config import logger
+from app.database import SessionLocal
+from app.models.user import EmailVerificationOTP
 from app.services.otp_service import OTPService
 
 
@@ -23,3 +25,24 @@ def send_forgot_password_email(email: str, template: str, subject: str):
         return response
     except Exception as error:
         logger.error(error)
+
+
+@celery_app.task()
+def delete_expired_otp():
+    db = SessionLocal()
+    try:
+        otps = db.query(EmailVerificationOTP).where(EmailVerificationOTP.is_verified == False).all()
+        db.close()
+        for otp in otps:
+            if otp.is_otp_expired():
+                result = db.delete(otp)
+                affected_rows = result.rowcount
+                if affected_rows == 0:
+                    logger.warning(f"No rows were deleted for OTP ID: {otp.id}")
+                else:
+                    logger.info(f"Deleted {affected_rows} row(s) for OTP ID: {otp.id}")
+                db.commit()
+    except Exception as error:
+        logger.error(error)
+    finally:
+        db.close()

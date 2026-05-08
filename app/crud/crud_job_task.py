@@ -6,25 +6,25 @@ from app.models.job_application import JobTask, TaskCreator
 from app.schemas.job_application import ApiResponse
 from app.schemas.job_task import JobTaskCreate, JobTaskUpdate, JobTaskSnooze
 
-
 from app.services.task_service import task_service
 
 
 def create_job_task(data: JobTaskCreate, user_id: str):
     try:
         return task_service.create_task(data.name, data.name, data.task_type, TaskCreator.MANUAL, data.due_date,
-                                 {"job_application_id": data.job_application_id, "user_id": user_id})
+                                        {"job_application_id": data.job_application_id, "user_id": user_id})
     except Exception as e:
         logger.error(e)
-        raise HTTPException(status_code=404, detail="Error creating task")
+        raise Exception("Error creating task")
 
 
 def update_job_task(data: JobTaskUpdate, task_id: str):
     try:
-        task_service.update_task(task_id, data)
+        result = task_service.update_task(task_id, data)
+        return result
     except Exception as e:
         logger.error(e)
-        raise HTTPException(status_code=404, detail="Error updating task")
+        raise Exception("Error updating task")
 
 
 def get_task_by_id(task_id: str):
@@ -33,7 +33,7 @@ def get_task_by_id(task_id: str):
         return ApiResponse(success=True, payload=task)
     except Exception as error:
         logger.error(error)
-        raise HTTPException(status_code=404, detail="Error getting task")
+        raise Exception("Error getting task")
 
 
 def get_tasks(job_id: str, limit: int):
@@ -42,7 +42,7 @@ def get_tasks(job_id: str, limit: int):
         return ApiResponse(success=True, payload={"data": results})
     except Exception as error:
         logger.error(error)
-        raise HTTPException(status_code=404, detail="Error getting tasks")
+        raise Exception("Error getting tasks")
 
 
 def get_daily_tasks(user_id: str):
@@ -51,7 +51,7 @@ def get_daily_tasks(user_id: str):
         return ApiResponse(success=True, payload={"data": results})
     except Exception as error:
         logger.error(error)
-        raise HTTPException(status_code=404, detail="Error getting daily tasks")
+        raise Exception("Error getting daily tasks")
 
 
 def get_overdue_tasks(user_id: str):
@@ -60,7 +60,7 @@ def get_overdue_tasks(user_id: str):
         return ApiResponse(success=True, payload={"data": results})
     except Exception as error:
         logger.error(error)
-        raise HTTPException(status_code=404, detail="Error getting overdue tasks")
+        raise Exception("Error getting overdue tasks")
 
 
 def get_upcoming_tasks(user_id: str):
@@ -69,7 +69,7 @@ def get_upcoming_tasks(user_id: str):
         return ApiResponse(success=True, payload={"data": results})
     except Exception as error:
         logger.error(error)
-        raise HTTPException(status_code=404, detail="Error getting upcoming tasks")
+        raise Exception("Error getting upcoming tasks")
 
 
 def delete_task(task_id: str, db: Session):
@@ -85,27 +85,28 @@ def delete_task(task_id: str, db: Session):
         }
     except Exception as e:
         logger.error(e)
-        raise HTTPException(status_code=404, detail="Error deleting task")
+        raise Exception("Error deleting task")
 
 
 def snooze_job_task(data: JobTaskSnooze, task_id: str):
     try:
-        task_service.snooze_task(task_id, data.period, TaskCreator.MANUAL)
+        return task_service.snooze_task(task_id, data.period, TaskCreator.MANUAL)
     except Exception as e:
         logger.error(e)
-        raise HTTPException(status_code=404, detail="Error Snoozing task")
+        raise Exception("Error Snoozing task")
 
 
 def complete_job_task(task_id: str):
     try:
-        task_service.complete_task(task_id)
+        return task_service.complete_task(task_id)
     except Exception as e:
         logger.error(e)
-        raise HTTPException(status_code=404, detail="Error Completing task")
+        raise Exception("Error Completing task")
+
 
 def cancel_job_task(task_id: str):
     try:
-        task_service.cancel_task(task_id)
+        return task_service.cancel_task(task_id)
     except Exception as e:
         logger.error(e)
-        raise HTTPException(status_code=404, detail="Error Cancelling task")
+        raise Exception("Error Cancelling task")
