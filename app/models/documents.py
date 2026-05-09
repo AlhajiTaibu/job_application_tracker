@@ -2,17 +2,19 @@ import uuid
 
 from sqlalchemy import Column, String, Integer, DateTime, Boolean, func, ForeignKey
 from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.orm import relationship
 
 from app.database import Base
 from app.database import SessionLocal
-from app.models.job_application import JobApplication
+from app.models.association import documents_association_table
+from app.models.user import User
 from app.services.storage_service import storage_service
 
 metadata = Base.metadata
 
 
 class Documents(Base):
-    __tablename__ = "document_upload"
+    __tablename__ = "documents"
     id = Column(
         UUID(as_uuid=True),
         primary_key=True,
@@ -20,7 +22,9 @@ class Documents(Base):
         index=True,
         nullable=False
     )
-    job_application_id = Column(UUID, ForeignKey(JobApplication.id), nullable=False, index=True)
+    job_applications = relationship("JobApplication", secondary=documents_association_table, back_populates="documents")
+    user_id = Column(UUID, ForeignKey(User.id), nullable=False, index=True)
+    name = Column(String(255))
     filename = Column(String)
     file_key = Column(UUID, nullable=False, index=True)
     file_type = Column(String(20))
@@ -30,6 +34,8 @@ class Documents(Base):
     upload_date = Column(DateTime)
     size = Column(Integer)
     is_archived = Column(Boolean, default=False)
+    is_base = Column(Boolean, default=False)
+    is_draft = Column(Boolean, default=False)
     created_at = Column(DateTime, default=func.now())
 
     def __repr__(self):

@@ -2,14 +2,10 @@ import base64
 from datetime import datetime
 from uuid import uuid4
 
-from fastapi import HTTPException
-from sqlalchemy import desc
-
 from app.core.config import settings
 from app.core.logging_config import logger
 from app.database import SessionLocal
 from app.models.documents import Documents
-from app.models.job_application import JobApplication
 from app.services.storage_service import storage_service
 
 
@@ -17,28 +13,17 @@ class DocumentService:
     def __init__(self, bucket):
         self.db = SessionLocal()
         self.bucket = bucket
+        self.resume_max_file_size = settings.max_file_size
 
     def upload_file(self, data, file_content):
         try:
-            max_file_size = settings.max_file_size
-            if data['file_size'] > max_file_size:
-                raise HTTPException(status_code=413, detail="File too large")
-
-            db_job = self.db.query(JobApplication).filter(JobApplication.id == data['job_application_id']).first()
-            if not db_job:
-                raise HTTPException(status_code=404, detail="Job application not found")
-
-            doc = self.db.query(Documents).filter(Documents.job_application_id == data['job_application_id'],
-                                                  Documents.is_latest == True,
-                                                  Documents.purpose == data['purpose']).order_by(
-                desc(Documents.created_at)).first()
-            if doc:
-                doc.is_latest = False
-                self.db.commit()
-
+            if data['purpose'] in ["cv", "cover letter", "portfolio"] and data['file_size'] > self.resume_max_file_size:
+                raise Exception("File too large")
+            if data['purpose'] == "other" and data['file_size'] > 2 * self.resume_max_file_size:
+                raise Exception("File too large")
             filename, ext = data['filename'].split(".") if data['filename'] else []
             if not self.check_document_extension_vs_purpose(ext, data['purpose']):
-                raise HTTPException(status_code=400, detail="Invalid file format")
+                raise Exception("Invalid file format")
             file_key = f"{uuid4()}.{ext}"
             content = base64.b64decode(file_content)
             extension = self.resolve_ext(ext)
@@ -46,16 +31,20 @@ class DocumentService:
             final_file_key = file_key.split('.')[0]
 
             doc_instance = Documents(
-                job_application_id=data['job_application_id'],
                 size=data['file_size'],
                 file_type=ext,
                 filename=filename,
                 file_key=final_file_key,
                 purpose=data['purpose'],
-                upload_date=datetime.now(),
-                version_name=db_job.job_title,
-                is_latest=True
+                user_id=data['user_id'],
+                upload_date=datetime.now()
             )
+            if "is_base" in data:
+                doc_instance.is_base = data['is_base']
+            if "name" in data:
+                doc_instance.name = data['name']
+            if "is_draft" in data:
+                doc_instance.is_draft = data['is_draft']
             doc_instance.save_to_db()
             return {
                 "success": True,
@@ -64,7 +53,7 @@ class DocumentService:
             }
         except Exception as error:
             logger.error(error)
-            raise HTTPException(status_code=400, detail=str(error))
+            raise Exception(str(error))
 
     def check_document_extension_vs_purpose(self, ext: str, purpose: str):
         if purpose == "cv" and ext == "pdf":
