@@ -6,6 +6,7 @@ from fastapi.params import Query
 from pydantic import BaseModel
 
 from app.schemas.contacts import ContactsDetailResponse
+from app.schemas.documents import DocumentsShortResponse
 from app.schemas.interview import InterviewDetailShort
 
 T = TypeVar("T")
@@ -61,6 +62,7 @@ class JobApplicationResponse(BaseModel):
     source: str
     notes: Optional[str]
     interviews: Optional[List[InterviewDetailShort]]
+    documents: Optional[List[DocumentsShortResponse]]
     updated_at: Optional[datetime]
 
 class ContactsDetailTruncatedResponse(BaseModel):

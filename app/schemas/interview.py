@@ -57,7 +57,7 @@ class InterviewDetailShort(BaseModel):
     format: Optional[Literal[
         "phone", "video", "onsite", "technical", "system design", "behavioural", "case study", "pair programming", "panel"]]
     outcome: Optional[Literal["pending", "scheduled", "passed", "rejected", "withdrawn", "no feedback"]]
-    round: int
+    round: Optional[int]
     date: Optional[date]
     time: Optional[time]
 
@@ -71,11 +71,11 @@ class InterviewJoin(BaseModel):
     user_id: uuid.UUID
     company_name: str
     job_title: str
-    format: str
-    round: int
+    format: Optional[str]
+    round: Optional[int]
     outcome: Optional[str]
-    date: date
-    time: time
+    date: Optional[date]
+    time: Optional[time]
 
 
 class InterviewJoinList(BaseModel):
