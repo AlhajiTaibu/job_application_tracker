@@ -50,3 +50,10 @@ def retrieve_last_item_key(sort_val, last_item: JobApplication):
         return last_item.company_name
     else:
         raise HTTPException(status_code=404, detail="Error retrieving last item key")
+
+def resolve_bucket_name(purpose: str):
+    if purpose == "cv":
+        return "resumes"
+    if purpose in ["cover letter", "portfolio"]:
+        return "documents"
+    return "miscellaneous"

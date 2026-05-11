@@ -8,14 +8,9 @@ from sqlalchemy.orm import relationship
 from app.database import Base
 from app.database import SessionLocal
 from app.models.user import User
+from app.models.association import documents_association_table, association_table
 
 metadata = Base.metadata
-
-
-association_table = Table('association', Base.metadata,
-    Column('job_application_id', UUID(as_uuid=True), ForeignKey('job_application.id')),
-    Column('contacts_id', UUID(as_uuid=True), ForeignKey('contacts.id'))
-)
 
 
 class JobApplication(Base):
@@ -29,6 +24,7 @@ class JobApplication(Base):
     )
     user_id = Column(UUID, ForeignKey(User.id), nullable=False, index=True)
     contacts = relationship("Contacts", secondary=association_table, back_populates="job_applications")
+    documents = relationship("Documents", secondary=documents_association_table, back_populates="job_applications")
     company_name = Column(String(255), nullable=False)
     job_url = Column(String(255), nullable=False)
     job_title = Column(String(255), nullable=False)
