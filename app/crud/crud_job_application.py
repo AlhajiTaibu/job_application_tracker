@@ -6,6 +6,8 @@ from sqlalchemy.orm import Session
 
 from app.core.logging_config import logger
 from app.core.util import decode_cursor, encode_cursor, retrieve_last_item_key, cast_to_column_type
+from app.models.association import documents_association_table
+from app.models.documents import Documents
 from app.models.job_application import JobApplication, Interview, \
     JobApplicationStatusTransitionType
 from app.models.user import User
@@ -46,6 +48,10 @@ def get_job_application_by_id(job_id: str, user: User, db: Session):
                                                  JobApplication.user_id == user.id).first()
         if not db_job:
             raise HTTPException(status_code=404, detail="Job application not found")
+        docs = (db.query(Documents)
+                .join(documents_association_table, documents_association_table.c.documents_id == Documents.id)
+                .join(JobApplication, JobApplication.id == documents_association_table.c.job_application_id).all())
+        db_job.documents = docs
         interviews = db.query(Interview).filter(Interview.job_application_id == job_id).all()
         db_job.interviews = interviews
         return ApiResponse(success=True, payload=db_job)
@@ -67,7 +73,7 @@ def get_job_applications(user: User, db: Session, filters: JobFilterParams, limi
 
         # Filtering
         if filters.company_name:
-            stmt = stmt.where(JobApplication.company.ilike(f"%{filters.company_name}%"))
+            stmt = stmt.where(JobApplication.company_name.ilike(f"%{filters.company_name}%"))
         if filters.status:
             stmt = stmt.where(JobApplication.status == filters.status)
         if filters.start_date:

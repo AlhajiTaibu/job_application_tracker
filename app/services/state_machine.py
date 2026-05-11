@@ -6,6 +6,8 @@ from sqlalchemy import desc
 
 from app.core.logging_config import logger
 from app.database import SessionLocal
+from app.models.association import documents_association_table
+from app.models.documents import Documents
 from app.models.job_application import JobApplication, JobApplicationStatusHistory, Interview, TaskType, TaskCreator, \
     JobTask, TaskStatus, JobApplicationStatusTransitionType
 from app.services.task_service import task_service
@@ -150,15 +152,7 @@ class JobApplicationStateMachine:
         # TODO The system asks for an optional rejection reason —
         #  they select "rejected post-interview" from a dropdown and add a note:
         #  "second round — culture fit feedback." All pending tasks on this application are automatically cancelled.
-        pending_tasks = self.db.query(JobTask).filter(
-            JobTask.job_application_id == job_app.id,
-            JobTask.status == TaskStatus.PENDING).all()
-        self.db.close()
-        for task in pending_tasks:
-            task.status = TaskStatus.CANCELLED
-            task.updated_at = datetime.now()
-            task.save_to_db()
-
+        self._cancel_tasks_archive_docs(job_app.id)
         # db_interview = self.db.query(Interview).filter(Interview.job_application_id == job_app.id).order_by(
         #     desc(Interview.created_at)).all()
         # if db_interview:
@@ -194,14 +188,26 @@ class JobApplicationStateMachine:
         # TODO The system asks for an optional rejection reason —
         #  they select "rejected post-interview" from a dropdown and add a note:
         #  "second round — culture fit feedback." All pending tasks on this application are automatically cancelled.
+        self._cancel_tasks_archive_docs(job_app.id)
+
+    def _cancel_tasks_archive_docs(self, job_app_id):
         pending_tasks = self.db.query(JobTask).filter(
-            JobTask.job_application_id == job_app.id,
+            JobTask.job_application_id == job_app_id,
             JobTask.status == TaskStatus.PENDING).all()
         self.db.close()
         for task in pending_tasks:
             task.status = TaskStatus.CANCELLED
             task.updated_at = datetime.now()
             task.save_to_db()
+
+        docs = (self.db.query(Documents)
+                .join(documents_association_table, documents_association_table.c.documents_id == Documents.id)
+                .join(JobApplication, JobApplication.id == documents_association_table.c.job_application_id)
+                .filter(JobApplication.id == job_app_id).all())
+        self.db.close()
+        for doc in docs:
+            doc.is_archived = True
+            doc.save_to_db()
 
 
 job_application_state_machine = JobApplicationStateMachine()

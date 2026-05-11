@@ -126,7 +126,7 @@ class DocumentAdmin(ModelView, model=Documents):
         "preview_link": lambda m, a: Markup(
             f'<a href="{m.get_url()}" target="_blank">'
             f'  <i class="fa-solid fa-eye"></i> View PDF'
-            f'</a>'
+            f'</a>' if m.file_key else ''
         )
     }
 
@@ -174,7 +174,7 @@ class ProfileAdmin(ModelView, model=Profile):
             f'<a href="{m.avatar_url}" target="_blank">'
             f'  <i class="fa-solid fa-eye"></i> View Image'
             f'</a>'
-        )
+        ) if m.avatar_url else ""
     }
 
 class AdminRegistration:
