@@ -152,7 +152,7 @@ def update_job_application(
         db_job_app.job_title = data.job_title if data.job_title else db_job_app.job_title
         db_job_app.description = data.description if data.description else db_job_app.description
         db_job_app.source = data.source if data.source else db_job_app.source
-        db_job_app.date_applied = datetime.strptime(data.date_applied, "%d/%m/%Y") if data.date_applied else db_job_app.date_applied
+        db_job_app.date_applied = datetime.strptime(data.date_applied, "%Y-%m-%dT%H:%M:%S.%f") if data.date_applied else db_job_app.date_applied
         db.commit()
         db.refresh(db_job_app)
 

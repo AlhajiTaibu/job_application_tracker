@@ -28,9 +28,9 @@ def create_interview(data: InterviewCreate, db: Session):
             actual_duration=data.actual_duration
         )
         if data.date:
-            interview_instance.date = datetime.datetime.strptime(data.date, "%d/%m/%Y").date()
+            interview_instance.date = datetime.datetime.strptime(data.date, "%Y-%m-%d").date()
         if data.time:
-            interview_instance.time = datetime.datetime.strptime(data.time, "%H:%M").time()
+            interview_instance.time = datetime.datetime.strptime(data.time, "%H:%M:%S.%f").time()
         interview_instance.save_to_db()
         db.close()
         if job_application_instance.status in ["saved", "applied"]:

@@ -26,7 +26,7 @@ class TaskService:
                 created_by=created_by
             )
             if due_date:
-                task.due_date = datetime.strptime(due_date, "%d/%m/%Y") if isinstance(due_date, str) else task.due_date
+                task.due_date = datetime.strptime(due_date, "%Y-%m-%dT%H:%M:%S.%f") if isinstance(due_date, str) else task.due_date
             if meta_data:
                 if "user_id" in meta_data:
                     task.user_id = meta_data["user_id"]
@@ -55,7 +55,7 @@ class TaskService:
             if not task:
                 raise Exception("Task not found")
             task.name = data.name if data.name in data else task.name
-            task.due_date = datetime.strptime(data.due_date, "%d/%m/%Y %H:%M") if data.due_date else task.due_date
+            task.due_date = datetime.strptime(data.due_date, "%Y-%m-%dT%H:%M:%S.%f") if data.due_date else task.due_date
             task.task_type = data.task_type if data.task_type else task.task_type
             task.status = data.status if data.status else task.status
             task.updated_at = datetime.now()
