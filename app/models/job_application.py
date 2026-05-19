@@ -1,7 +1,7 @@
 import uuid
 from enum import Enum
 
-from sqlalchemy import Column, String, DateTime, func, Boolean, ForeignKey, Date, Time, Integer, Table, JSON
+from sqlalchemy import Column, String, DateTime, func, Boolean, ForeignKey, Date, Time, Integer, Table, Index
 from sqlalchemy.dialects.postgresql.base import UUID
 from sqlalchemy.orm import relationship
 
@@ -15,6 +15,21 @@ metadata = Base.metadata
 
 class JobApplication(Base):
     __tablename__ = "job_application"
+
+    __table_args__ = (
+        Index(
+            "ix_job_application_company_name_trgm",
+            "company_name",
+            postgresql_using="gin",
+            postgresql_ops={"company_name": "gin_trgm_ops"},
+        ),
+        Index(
+            "ix_job_application_job_title_trgm",
+            "job_title",
+            postgresql_using="gin",
+            postgresql_ops={"job_title": "gin_trgm_ops"},
+        ),
+    )
     id = Column(
         UUID(as_uuid=True),
         primary_key=True,
@@ -25,17 +40,17 @@ class JobApplication(Base):
     user_id = Column(UUID, ForeignKey(User.id), nullable=False, index=True)
     contacts = relationship("Contacts", secondary=association_table, back_populates="job_applications")
     documents = relationship("Documents", secondary=documents_association_table, back_populates="job_applications")
-    company_name = Column(String(255), nullable=False)
+    company_name = Column(String(255), nullable=False, index=True)
     job_url = Column(String(255), nullable=False)
-    job_title = Column(String(255), nullable=False)
+    job_title = Column(String(255), nullable=False, index=True)
     description = Column(String)
-    status = Column(String(255), nullable=False)
+    status = Column(String(255), nullable=False, index=True)
     date_applied = Column(DateTime)
     source = Column(String(255), nullable=False)
     notes = Column(String(255), nullable=True)
-    is_archived = Column(Boolean, nullable=False, default=False)
-    updated_at = Column(DateTime, nullable=True)
-    created_at = Column(DateTime, default=func.now())
+    is_archived = Column(Boolean, nullable=False, default=False, index=True)
+    updated_at = Column(DateTime, nullable=True, index=True)
+    created_at = Column(DateTime, default=func.now(), index=True)
 
     def __repr__(self):
         return f"Job: {self.company_name} - {self.job_title}"

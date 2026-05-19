@@ -19,8 +19,8 @@ router = APIRouter()
 
 @router.post("/register")
 async def register(user: UserCreate, db: Annotated[Session, Depends(get_db)]):
-    user = crud_user.create_user(db, user)
     try:
+        user = crud_user.create_user(db, user)
         task = send_verification_email.delay(user.email)
         logger.info(f"Task {task.id}, email: {user.email}, email verification sent")
         return {
@@ -30,23 +30,26 @@ async def register(user: UserCreate, db: Annotated[Session, Depends(get_db)]):
         }
     except Exception as error:
         logger.error(f"error: {error}")
-        raise HTTPException(status_code=400, detail="Error sending OTP email")
+        raise HTTPException(status_code=400, detail=str(error))
 
 
 @router.post("/login")
 async def login(data: Annotated[OAuth2PasswordRequestForm, Depends()], db: Annotated[Session, Depends(get_db)]):
-    user = crud_user.get_user_by_email(db, data.username)
-    if not user or not _verify_password(data.password, user.hashed_password):
-        raise HTTPException(status_code=400, detail="Invalid credentials")
-    if not user.is_verified:
-        raise HTTPException(status_code=400, detail="User's email is not verified")
-    return {
-        "access_token": _make_access_token(user.email),
-        "token_type": "bearer",
-        "refresh_token": _make_refresh_token(user.email),
-        "user_id": user.id
-    }
-
+    try:
+        user = crud_user.get_user_by_email(db, data.username)
+        if not user or not _verify_password(data.password, user.hashed_password):
+            raise HTTPException(status_code=400, detail="Invalid credentials")
+        if not user.is_verified:
+            raise HTTPException(status_code=400, detail="User's email is not verified")
+        return {
+            "access_token": _make_access_token(user.email),
+            "token_type": "bearer",
+            "refresh_token": _make_refresh_token(user.email),
+            "user_id": user.id
+        }
+    except Exception as error:
+        logger.error(f"error: {error}")
+        raise HTTPException(status_code=400, detail=str(error))
 
 @router.post("/confirm-email")
 async def confirm_email(token_data: ConfirmEmail, db: Annotated[Session, Depends(get_db)]):
@@ -87,18 +90,18 @@ async def resend_otp(data: ResendOTP, db: Annotated[Session, Depends(get_db)]):
 
 @router.post("/refresh-token")
 async def refresh_access_token(token: RefreshToken, db: Annotated[Session, Depends(get_db)]):
-    crud_user.check_blacklisted_token(db, token)
     try:
+        crud_user.check_blacklisted_token(db, token)
         email = _verify_token(token.refresh_token)
-    except Exception as e:
-        logger.error(e)
-        raise HTTPException(status_code=400, detail=f"{str(e)}")
-    db_user = crud_user.get_user_by_email(db, email)
-    return {
-        "access_token": _make_access_token(db_user.email),
-        "token_type": "bearer",
-        "message": "Token refreshed successfully"
-    }
+        db_user = crud_user.get_user_by_email(db, email)
+        return {
+            "access_token": _make_access_token(db_user.email),
+            "token_type": "bearer",
+            "message": "Token refreshed successfully"
+        }
+    except Exception as error:
+        logger.error(error)
+        raise HTTPException(status_code=400, detail=f"{error}")
 
 
 @router.post("/logout")
