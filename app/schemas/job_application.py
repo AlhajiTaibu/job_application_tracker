@@ -79,6 +79,9 @@ class JobApplicationShortResponse(BaseModel):
     description: Optional[str]
     contacts: Optional[List[ContactsDetailTruncatedResponse]]
     source: str
+    notes: Optional[str]
+    job_url: Optional[str]
+    date_applied: Optional[datetime]
     updated_at: Optional[datetime]
 
 
