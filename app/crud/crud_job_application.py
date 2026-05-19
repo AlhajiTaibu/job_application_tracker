@@ -15,6 +15,12 @@ from app.schemas import job_application
 from app.schemas.job_application import ApiResponse, JobFilterParams, JobApplicationStatusTransition
 from app.services.state_machine import job_application_state_machine
 
+SORTABLE_COLUMNS = {
+    "created_at": JobApplication.created_at,
+    "updated_at": JobApplication.updated_at,
+    "company_name": JobApplication.company_name,
+    "status": JobApplication.status,
+}
 
 def create_job_application(data: job_application.JobApplicationCreate, user: User):
     try:
@@ -64,12 +70,7 @@ def get_job_applications(user: User, db: Session, filters: JobFilterParams, limi
     try:
         stmt = select(JobApplication).where(JobApplication.user_id == user.id, JobApplication.is_archived == False)
 
-        # Sorting
-        sort_column = getattr(JobApplication, filters.sort_by)
-        if filters.order == "desc":
-            stmt = stmt.order_by(desc(sort_column), desc(JobApplication.id)).limit(limit + 1)
-        else:
-            stmt = stmt.order_by(asc(sort_column), asc(JobApplication.id)).limit(limit + 1)
+        sort_column = SORTABLE_COLUMNS.get(filters.sort_by, JobApplication.created_at)
 
         # Filtering
         if filters.company_name:
@@ -109,7 +110,13 @@ def get_job_applications(user: User, db: Session, filters: JobFilterParams, limi
                         and_(sort_column == typed_val, JobApplication.id > last_id)
                     )
                 )
+        # Sorting
+        if filters.order == "desc":
+            stmt = stmt.order_by(desc(sort_column), desc(JobApplication.id))
+        else:
+            stmt = stmt.order_by(asc(sort_column), asc(JobApplication.id))
 
+        stmt = stmt.limit(limit + 1)
         results = db.execute(stmt).scalars().all()
         next_cursor = None
         has_next_page = len(results) > limit

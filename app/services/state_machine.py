@@ -45,6 +45,8 @@ class JobApplicationStateMachine:
                                     detail=f"Invalid transition, valid transitions: {self.VALID_TRANSITIONS.get(job_app.status, [])}")
             from_status = job_app.status
             self._apply_transition_logic(job_app, from_status, to_status)
+            if from_status == "saved" and to_status == "applied" and not job_app.date_applied:
+                job_app.date_applied = datetime.now()
             job_app.status = to_status
             job_app.updated_at = datetime.now()
             job_app.save_to_db()
