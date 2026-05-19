@@ -1,5 +1,6 @@
 import datetime
 
+from dateutil import parser
 from fastapi import HTTPException
 from sqlalchemy import select, or_, and_, desc, asc
 from sqlalchemy.orm import Session
@@ -28,9 +29,9 @@ def create_interview(data: InterviewCreate, db: Session):
             actual_duration=data.actual_duration
         )
         if data.date:
-            interview_instance.date = datetime.datetime.strptime(data.date, "%Y-%m-%d").date()
+            interview_instance.date = parser.parse(data.date).date()
         if data.time:
-            interview_instance.time = datetime.datetime.strptime(data.time, "%H:%M:%S.%f").time()
+            interview_instance.time = parser.parse(data.time).time()
         interview_instance.save_to_db()
         db.close()
         if job_application_instance.status in ["saved", "applied"]:
@@ -64,8 +65,8 @@ def update_interview(data: InterviewUpdate, interview_id: str, db: Session):
         db_interview.feedback = data.feedback if data.feedback else db_interview.feedback
         db_interview.interviewer_name = data.interviewer_name if data.interviewer_name else db_interview.interviewer_name
         db_interview.timezone = data.timezone if data.timezone else db_interview.timezone
-        db_interview.date = datetime.datetime.strptime(data.date, "%d/%m/%Y").date() if data.date else db_interview.date
-        db_interview.time = datetime.datetime.strptime(data.time, "%H:%M").time() if data.time else db_interview.time
+        db_interview.date = parser.parse(data.date).date() if data.date else db_interview.date
+        db_interview.time = parser.parse(data.time).time() if data.time else db_interview.time
         db.commit()
         db.refresh(db_interview)
         db.close()
