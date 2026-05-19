@@ -1,6 +1,6 @@
 from fastapi import HTTPException
 from pydantic import validate_email
-from sqlalchemy import select, desc, asc, func, and_, nulls_last
+from sqlalchemy import select, func
 from sqlalchemy.orm import Session
 
 from app.core.logging_config import logger
