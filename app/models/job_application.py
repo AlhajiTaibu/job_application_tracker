@@ -15,7 +15,7 @@ metadata = Base.metadata
 
 class JobApplication(Base):
     __tablename__ = "job_application"
-    
+
     __table_args__ = (
         Index(
             "ix_job_application_company_name_trgm",
@@ -40,7 +40,7 @@ class JobApplication(Base):
     user_id = Column(UUID, ForeignKey(User.id), nullable=False, index=True)
     contacts = relationship("Contacts", secondary=association_table, back_populates="job_applications")
     documents = relationship("Documents", secondary=documents_association_table, back_populates="job_applications")
-    company_name = Column(String(255), nullable=False)
+    company_name = Column(String(255), nullable=False, index=True)
     job_url = Column(String(255), nullable=False)
     job_title = Column(String(255), nullable=False)
     description = Column(String)
@@ -49,7 +49,7 @@ class JobApplication(Base):
     source = Column(String(255), nullable=False)
     notes = Column(String(255), nullable=True)
     is_archived = Column(Boolean, nullable=False, default=False, index=True)
-    updated_at = Column(DateTime, nullable=True)
+    updated_at = Column(DateTime, nullable=True, index=True)
     created_at = Column(DateTime, default=func.now(), index=True)
 
     def __repr__(self):
