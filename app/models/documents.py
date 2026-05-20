@@ -28,17 +28,17 @@ class Documents(Base):
     filename = Column(String)
     file_key = Column(UUID, nullable=True, index=True)
     file_type = Column(String(20))
-    purpose = Column(String(20))
+    purpose = Column(String(20), index=True)
     version_name = Column(String(255))
     is_submitted = Column(Boolean)
     upload_date = Column(DateTime)
     size = Column(Integer)
-    is_archived = Column(Boolean, default=False)
+    is_archived = Column(Boolean, default=False, index=True)
     is_base = Column(Boolean, default=False)
     is_draft = Column(Boolean, default=False)
     status = Column(String(20), default="pending")
     error = Column(String)
-    created_at = Column(DateTime, default=func.now())
+    created_at = Column(DateTime, default=func.now(), index=True)
 
     def __repr__(self):
         return f"File:{self.filename} purpose:{self.purpose}"

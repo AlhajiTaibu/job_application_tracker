@@ -176,14 +176,9 @@ def get_interviews_history(user_id: str, db: Session, filters: InterviewFilterPa
             .join(Interview, JobApplication.id == Interview.job_application_id)
             .where(JobApplication.user_id == user_id)
             .order_by(Interview.date)
-            .limit(limit)
         )
         # Sorting
         sort_column = getattr(Interview, filters.sort_by)
-        if filters.order == "desc":
-            stmt = stmt.order_by(desc(sort_column), desc(Interview.id)).limit(limit + 1)
-        else:
-            stmt = stmt.order_by(asc(sort_column), asc(Interview.id)).limit(limit + 1)
 
         # Filtering
         if filters.outcome:
@@ -217,6 +212,12 @@ def get_interviews_history(user_id: str, db: Session, filters: InterviewFilterPa
                     )
                 )
 
+        if filters.order == "desc":
+            stmt = stmt.order_by(desc(sort_column), desc(Interview.id))
+        else:
+            stmt = stmt.order_by(asc(sort_column), asc(Interview.id))
+
+        stmt = stmt.limit(limit + 1)
         results = db.execute(stmt).all()
         next_cursor = None
         has_next_page = len(results) > limit
