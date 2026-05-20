@@ -104,7 +104,7 @@ async def unlink_contact_to_job_application(
 
 
 @router.get("/status/{doc_id}")
-async def document(
+async def document_status(
         user: Annotated[User, Depends(get_current_user)],
         db: Annotated[Session, Depends(get_db)],
         doc_id: str
@@ -117,8 +117,8 @@ async def document(
         raise HTTPException(status_code=400, detail=str(e))
 
 
-@router.get("/update/{doc_id}")
-async def document(
+@router.post("/update/{doc_id}")
+async def document_update(
         user: Annotated[User, Depends(get_current_user)],
         db: Annotated[Session, Depends(get_db)],
         doc_id: str,

@@ -100,12 +100,12 @@ def get_contacts(user_id: str, db: Session, limit: int, filters: ContactsFilterP
             .outerjoin(latest_note_sub, Contacts.id == latest_note_sub.c.contacts_id)
             .where(Contacts.user_id == user_id)
             .order_by(latest_note_sub.c.latest_note.desc().nulls_last(), Contacts.name.asc())
-            .limit(limit + 1)
         )
 
         if filters.q:
             stmt = stmt.where(Contacts.company.ilike(f"%{filters.q}%"))
 
+        stmt = stmt.limit(limit + 1)
         db_contacts = db.execute(stmt).scalars().all()
         results = db_contacts if db_contacts else []
         return ApiResponse(success=True, payload={"data": results})

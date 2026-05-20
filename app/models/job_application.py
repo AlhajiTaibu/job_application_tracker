@@ -101,6 +101,16 @@ class JobApplicationStatusTransitionType(str, Enum):
 
 class Contacts(Base):
     __tablename__ = "contacts"
+
+    __table_args__ = (
+        Index(
+            "ix_contacts_company_trgm",
+            "company",
+            postgresql_using="gin",
+            postgresql_ops={"company": "gin_trgm_ops"},
+        ),
+    )
+
     id = Column(
         UUID(as_uuid=True),
         primary_key=True,
@@ -110,15 +120,15 @@ class Contacts(Base):
     )
     user_id = Column(UUID, ForeignKey(User.id), nullable=False, index=True)
     job_applications = relationship("JobApplication", secondary=association_table, back_populates="contacts")
-    name = Column(String(255), nullable=False)
-    company = Column(String(50))
+    name = Column(String(255), nullable=False, index=True)
+    company = Column(String(50), index=True)
     relationship_type = Column(String(50))
     notes = relationship("NoteLog", back_populates="contact")
     email = Column(String(255))
     role = Column(String(15))
     linkedIn_url = Column(String)
     updated_at = Column(DateTime, default=func.now(), onupdate=func.now())
-    created_at = Column(DateTime, default=func.now())
+    created_at = Column(DateTime, default=func.now(), index=True)
 
     def __repr__(self):
         return f"Contacts: {self.name} email: {self.email} -> {self.role}"
@@ -163,6 +173,15 @@ class NoteLog(Base):
 
 class Interview(Base):
     __tablename__ = "interview"
+
+    __table_args__ = (
+        Index(
+            "ix_interview_interviewer_name_trgm",
+            "interviewer_name",
+            postgresql_using="gin",
+            postgresql_ops={"interviewer_name": "gin_trgm_ops"},
+        ),
+    )
     id = Column(
         UUID(as_uuid=True),
         primary_key=True,
@@ -171,19 +190,19 @@ class Interview(Base):
         nullable=False
     )
     job_application_id = Column(UUID, ForeignKey("job_application.id", ondelete="CASCADE"), nullable=False, index=True)
-    format = Column(String(15))
-    outcome = Column(String(30))
-    date = Column(Date)
+    format = Column(String(15), index=True)
+    outcome = Column(String(30), index=True)
+    date = Column(Date, index=True)
     time = Column(Time)
     notes = Column(String)
     round = Column(Integer)
     estimated_duration = Column(String(50))
     actual_duration = Column(String(50))
     timezone = Column(String(15))
-    interviewer_name = Column(String(50))
+    interviewer_name = Column(String(50), index=True)
     feedback = Column(String)
     link = Column(String)
-    created_at = Column(DateTime, default=func.now())
+    created_at = Column(DateTime, default=func.now(), index=True)
 
     def __repr__(self):
         return f"Interview: {self.job_application_id} date: {self.date} time: {self.time}"
@@ -213,9 +232,9 @@ class JobTask(Base):
     description = Column(String)
     task_type = Column(String(50))
     created_by = Column(String(20))
-    status = Column(String(10), default="pending")
-    due_date = Column(DateTime)
-    is_overdue = Column(Boolean, default=False)
+    status = Column(String(10), default="pending", index=True)
+    due_date = Column(DateTime, index=True)
+    is_overdue = Column(Boolean, default=False, index=True)
     updated_at = Column(DateTime)
     created_at = Column(DateTime, default=func.now())
 

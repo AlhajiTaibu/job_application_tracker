@@ -160,10 +160,6 @@ def get_all_documents(db: Session, filters: DocumentFilterParams, limit: int, us
                 .where(Documents.is_archived == False).distinct())
 
         sort_column = getattr(Documents, filters.sort_by)
-        if filters.order == "desc":
-            stmt = stmt.order_by(desc(sort_column)).limit(limit + 1)
-        else:
-            stmt = stmt.order_by(asc(sort_column)).limit(limit + 1)
 
         if filters.company_name:
             stmt = (stmt.join(JobApplication, JobApplication.id == documents_association_table.c.job_application_id)
@@ -175,6 +171,12 @@ def get_all_documents(db: Session, filters: DocumentFilterParams, limit: int, us
             stmt = (stmt.join(JobApplication, JobApplication.id == documents_association_table.c.job_application_id)
                     .where(JobApplication.company_name.ilike(f"%{filters.q}%")))
 
+        if filters.order == "desc":
+            stmt = stmt.order_by(desc(sort_column))
+        else:
+            stmt = stmt.order_by(asc(sort_column))
+
+        stmt = stmt.limit(limit + 1)
         results = db.execute(stmt).unique().all()
         return ApiResponse(success=True, payload={"data": results})
     except Exception as error:

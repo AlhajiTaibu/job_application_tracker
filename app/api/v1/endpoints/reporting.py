@@ -98,7 +98,7 @@ async def interview_analytics(
 
 
 @router.get("/follow-up-analytics")
-async def interview_analytics(
+async def follow_up_analytics(
         user: Annotated[User, Depends(get_current_user)],
         db: Annotated[Session, Depends(get_db)]
 ):
@@ -112,7 +112,7 @@ async def interview_analytics(
 
 
 @router.get("/health-view-analytics")
-async def interview_analytics(
+async def health_view_analytics(
         user: Annotated[User, Depends(get_current_user)],
         db: Annotated[Session, Depends(get_db)]
 ):
