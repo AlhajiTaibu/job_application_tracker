@@ -2,7 +2,7 @@
 
 A full-stack application for managing your job search pipeline — track applications, automate status updates, and get email reminders, all in one place.
 
-> Built as a portfolio project to demonstrate production-grade backend engineering: state machine design, OAuth2 integration, cursor-based pagination, and containerized deployment.
+[//]: # (> Built as a portfolio project to demonstrate production-grade backend engineering: state machine design, OAuth2 integration, cursor-based pagination, and containerized deployment.)
 
 ---
 
@@ -68,21 +68,24 @@ job-application-tracker/
 │   │   └── v1/
 │   │       ├── applications.py    # CRUD + state transitions
 │   │       ├── auth.py            # Gmail OAuth2 flow
-│   │       └── emails.py          # Send/list emails
+│   │       └── interviews.py      # Manage Interviews
+│   ├── alembic/                   # Database migrations
 │   ├── core/
 │   │   ├── config.py              # pydantic-settings config
-│   │   └── state_machine.py       # Status transition logic
+│   │   └── celery.py              # Celery setup
 │   ├── models/
 │   │   └── application.py         # SQLAlchemy models
 │   ├── schemas/
 │   │   └── application.py         # Pydantic request/response schemas
 │   ├── services/
-│   │   ├── gmail.py               # Gmail API client
-│   │   └── reminder.py            # Stale application detection
-│   ├── templates/
-│   │   └── emails/                # Jinja2 HTML email templates
+│   │   ├── state_machine.py       # Status transition logic
+│   │   └── email_services.py      # Gmail API client
+│   ├── tasks/
+│   │   ├── job_tasks.py           # Background job tasks
+│   │   └── user_tasks.py          # Background user tasks                
 │   └── main.py
-├── alembic/                        # Database migrations
+├── templates/
+│   └── auth/                      # Jinja2 HTML email templates
 ├── tests/
 │   ├── test_applications.py
 │   └── test_state_machine.py
@@ -105,7 +108,7 @@ job-application-tracker/
 ### 1. Clone the repo
 
 ```bash
-git clone https://github.com/abdurami-taibu/job-application-tracker.git
+git clone https://github.com/AlhajiTaibu/job-application-tracker.git
 cd job-application-tracker
 ```
 
@@ -146,17 +149,16 @@ docker compose exec app alembic upgrade head
 
 ## API Overview
 
-| Method | Endpoint                                  | Description |
-|---|-------------------------------------------|---|
-| `GET` | `/api/v1/job_application/list`            | List applications (cursor-paginated) |
-| `POST` | `/api/v1/job_application/create`          | Create a new application |
-| `GET` | `/api/v1/job_applications/{id}`           | Get a single application |
-| `PATCH` | `/api/v1/job_application/transition/{id}` | Transition application status |
-| `DELETE` | `/api/v1/job_application/delete/{id}`     | Delete an application |
-
-[//]: # (| `GET` | `/api/v1/auth/login`                      | Start Gmail OAuth2 flow |)
-
-[//]: # (| `GET` | `/api/v1/auth/callback`                   | OAuth2 callback handler |)
+| Method   | Endpoint                           | Description                          |
+|----------|------------------------------------|--------------------------------------|
+| `GET`    | `/api/v1/job_application/list`     | List applications (cursor-paginated) |
+| `POST`   | `/api/v1/job_application/create`   | Create a new application             |
+| `GET`    | `/api/v1/job_applications/{id}`    | Get a single application             |
+| `PATCH`  | `/api/v1/job_application/transition/{id}` | Transition application status        |
+| `DELETE` | `/api/v1/job_application/delete/{id}` | Delete an application                |
+| `POST`   | `/api/v1/auth/login`               | Email and Password Authentication    |
+| `GET`    | `/api/v1/auth/google/login`        | Start Gmail OAuth2 flow              |
+| `GET`    | `/api/v1/auth/google/callback/`    | OAuth2 callback handler              |
 
 [//]: # (| `POST` | `/api/v1/emails/send`                     | Send a follow-up email |)
 
@@ -196,16 +198,6 @@ An enum column with no transition rules allows the client to set any status free
 **Why multi-stage Docker builds?**
 The builder stage installs dependencies (including build tools like `gcc` for `psycopg2`). The final stage copies only the compiled artifacts, keeping the production image lean and free of unnecessary build tooling.
 
----
-
-## Roadmap
-
-- [ ] Frontend (React/Next) — application dashboard with Kanban-style board
-- [ ] Background job scheduler (APScheduler or Celery) for automated reminders
-- [ ] Analytics dashboard — application funnel, response rates, time-to-offer
-- [ ] Export to CSV/PDF
-
-[//]: # (- [ ] Resume version tracking per application)
 
 ---
 

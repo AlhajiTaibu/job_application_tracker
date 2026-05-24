@@ -1,10 +1,12 @@
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.security import OAuth2PasswordRequestForm
+from fastapi_sso.sso.google import GoogleSSO
 from sqlalchemy.orm import Session
 
 from app.api.deps import get_db, get_reset_password_token_user
+from app.core.config import settings
 from app.core.logging_config import logger
 from app.core.security import _make_access_token, _verify_password, _make_refresh_token, \
     _verify_token, _make_reset_token
@@ -13,6 +15,13 @@ from app.models.user import User
 from app.schemas.user import UserCreate, ConfirmEmail, ResendOTP, RefreshToken, ResetPassword, ResetPasswordOTP
 from app.services.otp_service import OTPService
 from app.tasks.user_tasks import send_verification_email, send_forgot_password_email
+
+google_sso = GoogleSSO(
+    client_id=settings.client_id,
+    client_secret=settings.client_secret,
+    redirect_uri=settings.oauth2_redirect_uri,
+    allow_insecure_http=False if settings.is_prod else True
+)
 
 router = APIRouter()
 
@@ -50,6 +59,7 @@ async def login(data: Annotated[OAuth2PasswordRequestForm, Depends()], db: Annot
     except Exception as error:
         logger.error(f"error: {error}")
         raise HTTPException(status_code=400, detail=str(error))
+
 
 @router.post("/confirm-email")
 async def confirm_email(token_data: ConfirmEmail, db: Annotated[Session, Depends(get_db)]):
@@ -126,7 +136,7 @@ async def forgot_password(data: ResendOTP, db: Annotated[Session, Depends(get_db
 async def verify_reset_password_token(data: ResetPasswordOTP):
     try:
         otp_service = OTPService()
-        is_otp_verified = otp_service.verify_otp(data.email, data.token)
+        otp_service.verify_otp(data.email, data.token)
         reset_token = _make_reset_token(data.email)
         return {"success": True, "reset_token": reset_token}
     except Exception as error:
@@ -138,3 +148,34 @@ async def verify_reset_password_token(data: ResetPasswordOTP):
 async def reset_password(request_data: ResetPassword, user: Annotated[User, Depends(get_reset_password_token_user)],
                          db: Annotated[Session, Depends(get_db)]):
     return crud_user.reset_password(db, request_data, user.email)
+
+
+@router.get("/google/login")
+async def google_login():
+    """Redirects the user to the Google OAuth2 login page."""
+    try:
+        async with google_sso:
+            return await google_sso.get_login_redirect()
+    except Exception as error:
+        logger.error(str(error))
+        raise HTTPException(status_code=400, detail=f"An error occurred: {str(error)}")
+
+
+@router.get("/google/callback/")
+async def google_callback(request: Request):
+    """Handles the callback from Google, processes the token, and returns user data."""
+    try:
+        async with google_sso:
+            user = await google_sso.verify_and_process(request)
+
+        if not user:
+            raise HTTPException(status_code=400, detail="Authentication failed")
+        db_user = crud_user.create_user_or_login_via_google_sso(user=user)
+        return {
+            "access_token": _make_access_token(db_user.email),
+            "token_type": "bearer",
+            "refresh_token": _make_refresh_token(db_user.email),
+            "user_id": db_user.id
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"An error occurred: {str(e)}")
