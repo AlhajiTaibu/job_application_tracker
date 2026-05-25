@@ -158,7 +158,7 @@ async def google_login():
     """Redirects the user to the Google OAuth2 login page."""
     try:
         async with google_sso:
-            return await google_sso.get_login_redirect()
+            return await google_sso.get_login_redirect(redirect_uri=settings.oauth2_redirect_uri)
     except Exception as error:
         logger.error(str(error))
         raise HTTPException(status_code=400, detail=f"An error occurred: {str(error)}")
