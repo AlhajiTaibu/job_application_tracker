@@ -32,6 +32,7 @@ class Settings(BaseSettings):
     client_id: str
     client_secret: str
     redirect_uris: str
+    oauth2_redirect_uri: str
     project_id: str
     auth_uri: str
     token_uri: str
@@ -44,5 +45,8 @@ class Settings(BaseSettings):
     rate_limiter_limit: int
     is_prod: bool
     gmail_token_json_b64: str
+    api_host: str
+    api_port: int
+    frontend_url: str
 
 settings = Settings()

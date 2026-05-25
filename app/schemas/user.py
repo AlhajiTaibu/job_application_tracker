@@ -1,6 +1,7 @@
 import re
+from typing import Optional
 
-from pydantic import BaseModel, field_validator
+from pydantic import BaseModel, field_validator, EmailStr
 
 
 class UserCreate(BaseModel):
@@ -57,3 +58,11 @@ class ResetPassword(BaseModel):
 class ResetPasswordOTP(BaseModel):
     email: str
     token: str
+
+
+class GoogleUserPayload(BaseModel):
+    id: str
+    email: EmailStr
+    display_name: str
+    picture: Optional[str]
+    provider: str
