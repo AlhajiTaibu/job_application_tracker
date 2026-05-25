@@ -5,8 +5,9 @@ from sqlalchemy.orm import Session
 
 from app.core.logging_config import logger
 from app.core.security import _make_hash
+from app.database import SessionLocal
 from app.models.user import User, BlacklistedToken, Profile
-from app.schemas.user import UserCreate, ResetPassword, RefreshToken
+from app.schemas.user import UserCreate, ResetPassword, RefreshToken, GoogleUserPayload
 
 
 def get_user_by_email(db: Session, email: str):
@@ -73,6 +74,48 @@ def check_blacklisted_token(db: Session, token: RefreshToken):
     except Exception as error:
         logger.error(error)
         raise Exception(str(error))
+
+
+def create_user_or_login_via_google_sso(user: GoogleUserPayload):
+    db = SessionLocal()
+    try:
+        db_user = db.query(User).filter_by(email=user.email).first()
+        if db_user:
+            if not db_user.is_verified:
+                db_user.is_verified = True
+                db.commit()
+                db.refresh(db_user)
+            if not db_user.is_active:
+                raise HTTPException(status_code=400, detail="Account deactivated")
+            profile = db.query(Profile).filter_by(user_id=db_user.id).first()
+            if not profile:
+                create_profile_via_google_login(user, db_user)
+            return db_user
+        new_user = User(email=user.email, hashed_password=_make_hash(user.id), is_verified=True)
+        db.add(new_user)
+        db.commit()
+        db.refresh(new_user)
+        db.close()
+        create_profile_via_google_login(user, new_user)
+        return new_user
+    except Exception as error:
+        logger.error(error)
+        raise Exception(str(error))
+    finally:
+        db.close()
+
+
+def create_profile_via_google_login(user: GoogleUserPayload, db_user: User):
+    first_name = user.first_name
+    last_name = user.last_name
+    if not first_name or not last_name:
+        try:
+            display_name = list(user.display_name.split(" "))
+            first_name, last_name = display_name if display_name else "", ""
+        except Exception as e:
+            first_name, last_name = "", ""
+    profile = Profile(user_id=db_user.id, first_name=first_name, last_name=last_name)
+    profile.save_to_db()
 
 
 def create_blacklisted_token(db: Session, token: RefreshToken):

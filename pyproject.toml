@@ -31,4 +31,5 @@ dependencies = [
     "pandas>=3.0.2",
     "numpy>=2.4.4",
     "python-dateutil>=2.9.0.post0",
+    "fastapi-sso>=0.21.0",
 ]
