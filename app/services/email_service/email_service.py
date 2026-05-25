@@ -5,6 +5,8 @@ from email.mime.text import MIMEText
 
 from dotenv import find_dotenv, set_key
 from fastapi.templating import Jinja2Templates
+import logging
+import os
 from google.auth.transport.requests import Request
 from google.oauth2.credentials import Credentials
 from google_auth_oauthlib.flow import InstalledAppFlow
@@ -19,6 +21,8 @@ class Auth:
         self.scopes = scopes
         self.client_secret_config = client_secret_config
         self.application_name = application_name
+        BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+        self.token_path = os.path.join(BASE_DIR, ".credentials", "token.json")
 
     def get_credentials(self):
         """

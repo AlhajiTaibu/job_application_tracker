@@ -1,8 +1,11 @@
 from celery import Celery
 from celery.schedules import crontab
+import ssl
+
 from app.core.config import settings
 import ssl
 
+# Initialize Celery
 celery_app = Celery(
     "worker",
     broker=settings.celery_broker_url,
@@ -10,7 +13,7 @@ celery_app = Celery(
     include=['app.tasks.user_tasks', 'app.tasks.job_tasks', 'app.tasks.document_tasks', 'app.tasks.job_application', ]
 )
 
-celery_app.autodiscover_tasks(['app.tasks'])
+celery_app.autodiscover_tasks()
 
 celery_app.conf.beat_schedule = {
     'flag_overdue_tasks': {
