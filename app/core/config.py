@@ -47,5 +47,6 @@ class Settings(BaseSettings):
     gmail_token_json_b64: str
     api_host: str
     api_port: int
+    frontend_url: str
 
 settings = Settings()

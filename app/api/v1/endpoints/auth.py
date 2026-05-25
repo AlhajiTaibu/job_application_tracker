@@ -1,8 +1,11 @@
+import base64
+import json
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.security import OAuth2PasswordRequestForm
 from fastapi_sso.sso.google import GoogleSSO
+from fastapi.responses import RedirectResponse
 from sqlalchemy.orm import Session
 
 from app.api.deps import get_db, get_reset_password_token_user
@@ -170,12 +173,22 @@ async def google_callback(request: Request):
 
         if not user:
             raise HTTPException(status_code=400, detail="Authentication failed")
+        if not user.email:
+            raise HTTPException(status_code=400, detail="Email not provided by Google")
         db_user = crud_user.create_user_or_login_via_google_sso(user=user)
-        return {
+        data = {
             "access_token": _make_access_token(db_user.email),
             "token_type": "bearer",
             "refresh_token": _make_refresh_token(db_user.email),
-            "user_id": db_user.id
+            "user_id": str(db_user.id)
         }
+        if not settings.frontend_url:
+            return data
+        json_str = json.dumps(data)
+        encoded = base64.b64encode(json_str.encode("utf-8")).decode()
+        return RedirectResponse(url=f"{settings.frontend_url}?token={encoded}")
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"An error occurred: {str(e)}")
+        logger.error(str(e))
+        if not settings.frontend_url:
+            raise HTTPException(status_code=400, detail=f"An error occurred: {str(e)}")
+        return RedirectResponse(url=f"{settings.frontend_url}/login?error={str(e)}")
