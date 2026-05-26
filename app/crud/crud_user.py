@@ -1,6 +1,4 @@
-from fastapi import HTTPException
 from pydantic import validate_email
-from sqlalchemy.exc import NoResultFound
 from sqlalchemy.orm import Session
 
 from app.core.logging_config import logger
@@ -13,8 +11,8 @@ from app.schemas.user import UserCreate, ResetPassword, RefreshToken, GoogleUser
 def get_user_by_email(db: Session, email: str):
     try:
         return db.query(User).filter(User.email == email).first()
-    except NoResultFound as error:
-        raise HTTPException(status_code=404, detail=f"{str(error).split(':')[-1]}")
+    except Exception as error:
+        raise Exception(str(error))
 
 
 def create_user(db: Session, user: UserCreate):
@@ -41,7 +39,7 @@ def reset_password(db: Session, request_data: ResetPassword, email: str):
         password = request_data.password
         db_user = db.query(User).filter_by(email=email).first()
         if not db_user:
-            raise HTTPException(status_code=404, detail="Error")
+            raise Exception("Error")
         hashed_password = _make_hash(password)
         db_user.hashed_password = hashed_password
         db.commit()
@@ -49,17 +47,21 @@ def reset_password(db: Session, request_data: ResetPassword, email: str):
         return {"success": True, "message": "Password reset successful"}
     except Exception as error:
         logger.error(error)
-        raise HTTPException(status_code=400, detail="Error resetting password")
+        raise Exception("Error resetting password")
 
 
 def confirm_email(db: Session, email: str):
-    db_user = db.query(User).filter_by(email=email).first()
-    if not db_user:
-        raise HTTPException(status_code=404, detail="User not found")
-    db_user.is_verified = True
-    db.commit()
-    db.refresh(db_user)
-    return db_user
+    try:
+        db_user = db.query(User).filter_by(email=email).first()
+        if not db_user:
+            raise Exception("User not found")
+        db_user.is_verified = True
+        db.commit()
+        db.refresh(db_user)
+        return db_user
+    except Exception as error:
+        logger.error(error)
+        raise Exception(str(error))
 
 
 def check_blacklisted_token(db: Session, token: RefreshToken):
@@ -86,7 +88,7 @@ def create_user_or_login_via_google_sso(user: GoogleUserPayload):
                 db.commit()
                 db.refresh(db_user)
             if not db_user.is_active:
-                raise HTTPException(status_code=400, detail="Account deactivated")
+                raise Exception("Account deactivated")
             profile = db.query(Profile).filter_by(user_id=db_user.id).first()
             if not profile:
                 create_profile_via_google_login(user, db_user)

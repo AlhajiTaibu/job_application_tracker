@@ -41,6 +41,8 @@ class ContactsDetailResponse(BaseModel):
     role: Optional[str]
     linkedIn_url: Optional[str]
     notes: Optional[List[NoteLog]]
+    created_at: datetime
+    updated_at: Optional[datetime]
     job_applications: Optional[List[JobApplicationResponseTruncated]]
 
 
@@ -56,10 +58,8 @@ class ContactsFilterParams:
     def __init__(
             self,
             q: Optional[str] = Query(None, min_length=3, description="Search term"),
-            # sort_by: str = Query("created_at"),
             order: str = Query("desc", pattern="^(asc|desc)$")
     ):
-        # self.sort_by = sort_by
         self.order = order
         self.q = q
 
@@ -68,4 +68,4 @@ class NoteLog(BaseModel):
     id: uuid.UUID
     notes: Optional[str]
     created_at: datetime
-    updated_at: datetime
+    updated_at: Optional[datetime]

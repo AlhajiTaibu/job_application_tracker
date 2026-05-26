@@ -1,7 +1,6 @@
 import datetime
 
 from dateutil import parser
-from fastapi import HTTPException
 from sqlalchemy import select, or_, and_, desc, asc
 from sqlalchemy.orm import Session
 
@@ -17,7 +16,7 @@ def create_interview(data: InterviewCreate, db: Session):
     try:
         job_application_instance = db.query(JobApplication).where(JobApplication.id == data.job_application_id).first()
         if not job_application_instance:
-            raise HTTPException(status_code=400, detail="Error creating interview")
+            raise Exception("Error creating interview")
         interview_instance = Interview(
             job_application_id=data.job_application_id,
             format=data.format,
@@ -50,14 +49,14 @@ def create_interview(data: InterviewCreate, db: Session):
         }
     except Exception as e:
         logger.error(e)
-        raise HTTPException(status_code=400, detail="Error creating interview")
+        raise Exception("Error creating interview")
 
 
 def update_interview(data: InterviewUpdate, interview_id: str, db: Session):
     try:
         db_interview = db.query(Interview).where(Interview.id == interview_id).first()
         if not db_interview:
-            raise HTTPException(status_code=400, detail="Error updating interview")
+            raise Exception("Error updating interview")
         db_interview.notes = data.notes if data.notes else db_interview.notes
         db_interview.format = data.format if data.format else db_interview.format
         db_interview.round = data.round if data.round else db_interview.round
@@ -83,18 +82,18 @@ def update_interview(data: InterviewUpdate, interview_id: str, db: Session):
         }
     except Exception as error:
         logger.error(error)
-        raise HTTPException(status_code=404, detail="Error updating interview")
+        raise Exception("Error updating interview")
 
 
 def get_interview_by_id(interview_id: str, db: Session):
     try:
         db_interview = db.query(Interview).where(Interview.id == interview_id).first()
         if not db_interview:
-            raise HTTPException(status_code=404, detail="Interview not found")
+            raise Exception("Interview not found")
         return ApiResponse(success=True, payload=db_interview)
     except Exception as error:
         logger.error(error)
-        raise HTTPException(status_code=404, detail="Error getting interview")
+        raise Exception("Error getting interview")
 
 
 def get_interviews(job_application_id: str, db: Session, limit: int):
@@ -105,14 +104,14 @@ def get_interviews(job_application_id: str, db: Session, limit: int):
         return ApiResponse(success=True, payload={"data": results})
     except Exception as error:
         logger.error(error)
-        raise HTTPException(status_code=404, detail="Error getting interview")
+        raise Exception("Error getting interview")
 
 
 def delete_interview(interview_id: str, db: Session):
     try:
         db_interview = db.query(Interview).filter(Interview.id == interview_id).first()
         if db_interview is None:
-            raise HTTPException(status_code=404, detail="Interview not found")
+            raise Exception("Interview not found")
         db.delete(db_interview)
         db.commit()
         return {
@@ -121,7 +120,7 @@ def delete_interview(interview_id: str, db: Session):
         }
     except Exception as e:
         logger.error(e)
-        raise HTTPException(status_code=404, detail="Error deleting interview")
+        raise Exception("Error deleting interview")
 
 
 def get_upcoming_interviews(user_id: str, db: Session, limit: int):
@@ -153,7 +152,7 @@ def get_upcoming_interviews(user_id: str, db: Session, limit: int):
         return ApiResponse(success=True, payload={"data": results})
     except Exception as error:
         logger.error(error)
-        raise HTTPException(status_code=404, detail="Error getting interview")
+        raise Exception("Error getting interview")
 
 
 def get_interviews_history(user_id: str, db: Session, filters: InterviewFilterParams, limit: int, cursor: str = None):
@@ -235,7 +234,7 @@ def get_interviews_history(user_id: str, db: Session, filters: InterviewFilterPa
         return ApiResponse(success=True, payload={"data": db_interviews, "next_cursor": next_cursor})
     except Exception as error:
         logger.error(error)
-        raise HTTPException(status_code=404, detail="Error getting interview")
+        raise Exception("Error getting interview")
 
 def retrieve_last_item_key(sort_val, last_item: Interview):
     if sort_val == "created_at":
@@ -247,4 +246,4 @@ def retrieve_last_item_key(sort_val, last_item: Interview):
     elif sort_val == "outcome":
         return last_item.outcome
     else:
-        raise HTTPException(status_code=404, detail="Error retrieving last item key")
+        raise Exception("Error retrieving last item key")

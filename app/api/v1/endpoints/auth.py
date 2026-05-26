@@ -60,7 +60,7 @@ async def login(data: Annotated[OAuth2PasswordRequestForm, Depends()], db: Annot
             "user_id": user.id
         }
     except Exception as error:
-        logger.error(f"error: {error}")
+        logger.error(f"{error}")
         raise HTTPException(status_code=400, detail=str(error))
 
 
@@ -70,19 +70,19 @@ async def confirm_email(token_data: ConfirmEmail, db: Annotated[Session, Depends
         email, token = token_data.email, token_data.token
         otp_service = OTPService()
         is_otp_verified = otp_service.verify_otp(email, token)
+        if not is_otp_verified:
+            raise HTTPException(status_code=400, detail="Invalid token")
+
+        db_user = crud_user.confirm_email(db, email)
+        return {
+            "access_token": _make_access_token(db_user.email),
+            "token_type": "bearer",
+            "refresh_token": _make_refresh_token(db_user.email),
+            "user_id": db_user.id
+        }
     except Exception as error:
         logger.error(error)
-        raise HTTPException(status_code=400, detail=f"{str(error).split(':')[-1]}")
-    if not is_otp_verified:
-        raise HTTPException(status_code=400, detail="Invalid token")
-
-    db_user = crud_user.confirm_email(db, email)
-    return {
-        "access_token": _make_access_token(db_user.email),
-        "token_type": "bearer",
-        "refresh_token": _make_refresh_token(db_user.email),
-        "user_id": db_user.id
-    }
+        raise HTTPException(status_code=400, detail=str(error))
 
 
 @router.post("/resend-otp")
@@ -150,7 +150,13 @@ async def verify_reset_password_token(data: ResetPasswordOTP):
 @router.post("/reset-password")
 async def reset_password(request_data: ResetPassword, user: Annotated[User, Depends(get_reset_password_token_user)],
                          db: Annotated[Session, Depends(get_db)]):
-    return crud_user.reset_password(db, request_data, user.email)
+    try:
+        if not user.is_active:
+            raise HTTPException(status_code=403, detail="Forbidden")
+        return crud_user.reset_password(db, request_data, user.email)
+    except Exception as error:
+        logger.error(error)
+        raise HTTPException(status_code=400, detail=f"{str(error)}")
 
 
 @router.get("/google/login")

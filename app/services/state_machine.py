@@ -1,7 +1,6 @@
 from datetime import datetime, timedelta
 from typing import Dict, Any
 
-from fastapi import HTTPException
 from sqlalchemy import desc
 
 from app.core.logging_config import logger
@@ -41,8 +40,7 @@ class JobApplicationStateMachine:
                          metadata: Dict[str, Any] = None):
         try:
             if not job_application_state_machine.can_transition(job_app.status, to_status):
-                raise HTTPException(status_code=400,
-                                    detail=f"Invalid transition, valid transitions: {self.VALID_TRANSITIONS.get(job_app.status, [])}")
+                raise Exception(f"Invalid transition, valid transitions: {self.VALID_TRANSITIONS.get(job_app.status, [])}")
             from_status = job_app.status
             self._apply_transition_logic(job_app, from_status, to_status)
             if from_status == "saved" and to_status == "applied" and not job_app.date_applied:
@@ -70,7 +68,7 @@ class JobApplicationStateMachine:
             }
         except Exception as error:
             logger.error(error)
-            raise HTTPException(status_code=400, detail=str(error))
+            raise Exception(str(error))
 
     def _apply_transition_logic(self, job_app: JobApplication, from_status: str, to_status: str,
                                 metadata: Dict[str, Any] = None):
@@ -131,7 +129,7 @@ class JobApplicationStateMachine:
         db_interview = self.db.query(Interview).filter(Interview.job_application_id == job_app.id).order_by(
             desc(Interview.created_at)).all()
         if not db_interview:
-            raise HTTPException(status_code=400, detail="Update Error")
+            raise Exception("No interview on job application")
         else:
             db_interview = db_interview[-1]
             db_interview.outcome = "passed"
@@ -230,7 +228,7 @@ class InterviewStateMachine:
             return True
         except Exception as error:
             logger.error(error)
-            raise HTTPException(status_code=400, detail="Invalid transition")
+            raise Exception("Invalid transition")
 
     def _apply_transition_logic(self, interview: Interview, metadata: Dict[str, Any] = None):
         if interview.outcome == "passed":

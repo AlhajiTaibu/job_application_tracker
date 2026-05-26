@@ -1,4 +1,3 @@
-from fastapi import HTTPException
 from pydantic import validate_email
 from sqlalchemy import select, func
 from sqlalchemy.orm import Session
@@ -34,21 +33,21 @@ def create_contacts(data: ContactsCreate, user_id: str):
         }
     except Exception as e:
         logger.error(e)
-        raise HTTPException(status_code=404, detail="Error creating contact")
+        raise Exception("Error creating contact")
 
 
 def update_contacts(data: ContactsUpdate, db: Session, contact_id: str):
     try:
         db_contact = db.query(Contacts).filter(Contacts.id == contact_id).first()
         if db_contact is None:
-            raise HTTPException(status_code=404, detail="Contact not found")
+            raise Exception("Contact not found")
 
         db_contact.name = data.name if data.name else db_contact.name
         if data.email:
             try:
                 email_info, email = validate_email(data.email)
             except Exception as error:
-                raise HTTPException(status_code=400, detail=f"Invalid email: {error}")
+                raise Exception(f"Invalid email: {error}")
             if email:
                 db_contact.email = data.email
         db_contact.role = data.role if data.role else db_contact.role
@@ -72,7 +71,7 @@ def update_contacts(data: ContactsUpdate, db: Session, contact_id: str):
         }
     except Exception as e:
         logger.error(e)
-        raise HTTPException(status_code=404, detail="Error updating contact")
+        raise Exception("Error updating contact")
 
 
 def get_contacts_by_id(contact_id: str, user_id: str, db: Session):
@@ -80,11 +79,11 @@ def get_contacts_by_id(contact_id: str, user_id: str, db: Session):
         db_contact = db.query(Contacts).filter(Contacts.id == contact_id,
                                                Contacts.user_id == user_id).first()
         if not db_contact:
-            raise HTTPException(status_code=404, detail="Contact not found")
+            raise Exception("Contact not found")
         return ApiResponse(success=True, payload=db_contact)
     except Exception as error:
         logger.error(error)
-        raise HTTPException(status_code=404, detail="Error getting contact")
+        raise Exception("Error getting contact")
 
 
 def get_contacts(user_id: str, db: Session, limit: int, filters: ContactsFilterParams):
@@ -111,7 +110,7 @@ def get_contacts(user_id: str, db: Session, limit: int, filters: ContactsFilterP
         return ApiResponse(success=True, payload={"data": results})
     except Exception as error:
         logger.error(error)
-        raise HTTPException(status_code=404, detail="Error getting contact")
+        raise Exception("Error getting contact")
 
 
 def delete_contacts(user_id: str, contact_id: str, db: Session):
@@ -119,7 +118,7 @@ def delete_contacts(user_id: str, contact_id: str, db: Session):
         db_contact = db.query(Contacts).filter(Contacts.id == contact_id,
                                                Contacts.user_id == user_id).first()
         if db_contact is None:
-            raise HTTPException(status_code=404, detail="Contact not found")
+            raise Exception("Contact not found")
         db.delete(db_contact)
         db.commit()
         return {
@@ -128,7 +127,7 @@ def delete_contacts(user_id: str, contact_id: str, db: Session):
         }
     except Exception as e:
         logger.error(e)
-        raise HTTPException(status_code=404, detail="Error deleting contact")
+        raise Exception("Error deleting contact")
 
 
 def link_contact_to_job_application(data: ContactsLinkJobApplication, db: Session, contact_id: str):
@@ -136,10 +135,10 @@ def link_contact_to_job_application(data: ContactsLinkJobApplication, db: Sessio
         job_application_id = data.job_application_id
         db_job = db.query(JobApplication).filter(JobApplication.id == job_application_id).first()
         if db_job is None:
-            raise HTTPException(status_code=404, detail="Job application not found")
+            raise Exception("Job application not found")
         db_contact = db.query(Contacts).filter(Contacts.id == contact_id).first()
         if db_contact is None:
-            raise HTTPException(status_code=404, detail="Contact not found")
+            raise Exception("Contact not found")
         db_contact.job_applications.append(db_job)
         db.commit()
         db.refresh(db_job)
@@ -149,4 +148,4 @@ def link_contact_to_job_application(data: ContactsLinkJobApplication, db: Sessio
         }
     except Exception as e:
         logger.error(e)
-        raise HTTPException(status_code=404, detail="Error updating contact")
+        raise Exception("Error updating contact")

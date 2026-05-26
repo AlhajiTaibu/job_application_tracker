@@ -6,6 +6,7 @@ from fastapi.routing import APIRouter
 from sqlalchemy.orm import Session
 
 from app.api.deps import get_current_user, get_db
+from app.core.logging_config import logger
 from app.crud import crud_interview
 from app.models.user import User
 from app.schemas.interview import InterviewCreate, InterviewUpdate, InterviewDetail, \
@@ -26,6 +27,7 @@ async def interview(
             raise HTTPException(status_code=403, detail="Forbidden")
         return crud_interview.create_interview(data=request_data, db=db)
     except Exception as e:
+        logger.error(e)
         raise HTTPException(status_code=400, detail=str(e))
 
 
@@ -40,6 +42,7 @@ async def interviews(
             raise HTTPException(status_code=403, detail="Forbidden")
         return crud_interview.get_upcoming_interviews(user_id=user.id, db=db, limit=limit)
     except Exception as e:
+        logger.error(e)
         raise HTTPException(status_code=400, detail=str(e))
 
 
@@ -57,6 +60,7 @@ async def interviews(
         return crud_interview.get_interviews_history(user_id=user.id, db=db, filters=filters, limit=limit,
                                                      cursor=cursor)
     except Exception as e:
+        logger.error(e)
         raise HTTPException(status_code=400, detail=str(e))
 
 
@@ -72,6 +76,7 @@ async def interview(
             raise HTTPException(status_code=403, detail="Forbidden")
         return crud_interview.update_interview(data=request_data, interview_id=interview_id, db=db)
     except Exception as e:
+        logger.error(e)
         raise HTTPException(status_code=400, detail=str(e))
 
 
@@ -86,6 +91,7 @@ async def interview(
             raise HTTPException(status_code=403, detail="Forbidden")
         return crud_interview.get_interview_by_id(interview_id=interview_id, db=db)
     except Exception as e:
+        logger.error(e)
         raise HTTPException(status_code=400, detail=str(e))
 
 
@@ -101,6 +107,7 @@ async def interviews(
             raise HTTPException(status_code=403, detail="Forbidden")
         return crud_interview.get_interviews(job_application_id=job_id, db=db, limit=limit)
     except Exception as e:
+        logger.error(e)
         raise HTTPException(status_code=400, detail=str(e))
 
 
@@ -115,4 +122,5 @@ async def interview(
             raise HTTPException(status_code=403, detail="Forbidden")
         return crud_interview.delete_interview(interview_id=interview_id, db=db)
     except Exception as e:
+        logger.error(e)
         raise HTTPException(status_code=400, detail=str(e))
