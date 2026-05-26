@@ -1,4 +1,3 @@
-from fastapi import HTTPException
 from sqlalchemy.orm import Session
 
 from app.core.logging_config import logger
@@ -76,7 +75,7 @@ def delete_task(task_id: str, db: Session):
     try:
         db_task = db.query(JobTask).filter(JobTask.id == task_id).first()
         if db_task is None:
-            raise HTTPException(status_code=404, detail="Task not found")
+            raise Exception("Task not found")
         db.delete(db_task)
         db.commit()
         return {

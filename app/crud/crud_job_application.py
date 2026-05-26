@@ -1,6 +1,5 @@
 from datetime import datetime
 
-from fastapi import HTTPException
 from sqlalchemy import desc, asc, or_, select, and_
 from sqlalchemy.orm import Session
 
@@ -46,7 +45,7 @@ def create_job_application(data: job_application.JobApplicationCreate, user: Use
         }
     except Exception as e:
         logger.error(e)
-        raise HTTPException(status_code=404, detail="Error creating job application")
+        raise Exception("Error creating job application")
 
 
 def get_job_application_by_id(job_id: str, user: User, db: Session):
@@ -54,7 +53,7 @@ def get_job_application_by_id(job_id: str, user: User, db: Session):
         db_job = db.query(JobApplication).filter(JobApplication.id == job_id,
                                                  JobApplication.user_id == user.id).first()
         if not db_job:
-            raise HTTPException(status_code=404, detail="Job application not found")
+            raise Exception("Job application not found")
         docs = (db.query(Documents)
                 .join(documents_association_table, documents_association_table.c.documents_id == Documents.id)
                 .join(JobApplication, JobApplication.id == documents_association_table.c.job_application_id).all())
@@ -64,7 +63,7 @@ def get_job_application_by_id(job_id: str, user: User, db: Session):
         return ApiResponse(success=True, payload=db_job)
     except Exception as error:
         logger.error(error)
-        raise HTTPException(status_code=404, detail="Error getting job application")
+        raise Exception("Error getting job application")
 
 
 def get_job_applications(user: User, db: Session, filters: JobFilterParams, limit: int = 20, cursor: str = None):
@@ -135,7 +134,7 @@ def get_job_applications(user: User, db: Session, filters: JobFilterParams, limi
         return ApiResponse(success=True, payload={"data": db_jobs, "next_cursor": next_cursor})
     except Exception as error:
         logger.error(error)
-        raise HTTPException(status_code=400, detail="Error getting job applications")
+        raise Exception("Error getting job applications")
 
 
 def update_job_application(
@@ -145,7 +144,7 @@ def update_job_application(
     try:
         db_job_app = db.query(JobApplication).filter(JobApplication.id == job_id).first()
         if db_job_app is None:
-            raise HTTPException(status_code=404, detail="Job application not found")
+            raise Exception("Job application not found")
         db_job_app.notes = data.notes if data.notes else db_job_app.notes
         db_job_app.updated_at = datetime.now()
         db_job_app.company_name = data.company_name if data.company_name else db_job_app.company_name
@@ -167,7 +166,7 @@ def update_job_application(
         }
     except Exception as error:
         logger.error(error)
-        raise HTTPException(status_code=400, detail="Error updating job application")
+        raise Exception("Error updating job application")
 
 
 def delete_job_application(job_id: str, user: User, db: Session):
@@ -176,7 +175,7 @@ def delete_job_application(job_id: str, user: User, db: Session):
                                                      JobApplication.user_id == user.id,
                                                      JobApplication.is_archived == False).first()
         if db_job_app is None:
-            raise HTTPException(status_code=404, detail="Job application not found")
+            raise Exception("Job application not found")
         db_job_app.is_archived = True
         db.commit()
         db.refresh(db_job_app)
@@ -185,17 +184,17 @@ def delete_job_application(job_id: str, user: User, db: Session):
             "message": "Job application deleted successfully"
         }
     except Exception:
-        raise HTTPException(status_code=404, detail="Error deleting job application")
+        raise Exception("Error deleting job application")
 
 
 def transition_job_application_status(db: Session, job_id: str, data: JobApplicationStatusTransition):
     try:
         db_job_app = db.query(JobApplication).filter(JobApplication.id == job_id).first()
         if db_job_app is None:
-            raise HTTPException(status_code=404, detail="Job application not found")
+            raise Exception("Job application not found")
         db.close()
         result = job_application_state_machine.transition_state(db_job_app, data.to_status, JobApplicationStatusTransitionType.MANUAL, metadata={"reason": data.reason})
         return ApiResponse(success=True, payload=result)
     except Exception as error:
         logger.error(error)
-        raise HTTPException(status_code=400, detail=str(error))
+        raise Exception(str(error))

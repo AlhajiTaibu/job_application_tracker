@@ -27,7 +27,7 @@ async def profile(
         return crud_profile.update_profile(data=request_data, user_id=user.id, db=db)
     except Exception as error:
         logger.error(error)
-        raise HTTPException(status_code=400, detail="Error updating profile")
+        raise HTTPException(status_code=400, detail=str(error))
 
 
 @router.get("", response_model=ApiResponse[ProfileResponse])

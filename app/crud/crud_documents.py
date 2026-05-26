@@ -1,8 +1,8 @@
 import base64
 from datetime import datetime
 
-from fastapi import UploadFile, HTTPException
-from sqlalchemy import select, or_, desc, asc, and_
+from fastapi import UploadFile
+from sqlalchemy import select, desc, asc
 from sqlalchemy.orm import Session
 
 from app.core.config import settings
@@ -74,27 +74,27 @@ async def upload_document(file: UploadFile, data: DocumentsUpload, user_id: str)
         }
     except Exception as error:
         logger.error(error)
-        raise HTTPException(status_code=400, detail="Error uploading document")
+        raise Exception("Error uploading document")
 
 
 def view_document(db: Session, doc_id: str):
     try:
         db_doc = db.query(Documents).filter(Documents.id == doc_id, Documents.is_archived == False).first()
         if not db_doc:
-            raise HTTPException(status_code=404, detail="Document not found")
+            raise Exception("Document not found")
         bucket_name = resolve_bucket_name(str(db_doc.purpose))
         url = storage_service.get_signed_url(bucket_name, f"{db_doc.file_key}.{db_doc.file_type}")
         return {"url": url}
     except Exception as error:
         logger.error(error)
-        raise HTTPException(status_code=400, detail="Error retrieving document")
+        raise Exception("Error retrieving document")
 
 
 def delete_document(db: Session, doc_id: str):
     try:
         db_doc = db.query(Documents).filter(Documents.id == doc_id).first()
         if not db_doc:
-            raise HTTPException(status_code=404, detail="Document not found")
+            raise Exception("Document not found")
         db_doc.is_archived = True
         db_doc.is_latest = False
         db.commit()
@@ -105,7 +105,7 @@ def delete_document(db: Session, doc_id: str):
         }
     except Exception as error:
         logger.error(error)
-        raise HTTPException(status_code=400, detail="Error deleting document")
+        raise Exception("Error deleting document")
 
 
 def link_document_to_job_application(data: DocumentsLinkJobApplication, db: Session, doc_id: str):

@@ -24,7 +24,8 @@ async def job_application(
             raise HTTPException(status_code=403, detail="Forbidden")
         return crud_job_application.create_job_application(data=request_data, user=user)
     except Exception as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        logger.error(e)
+        raise HTTPException(status_code=400, detail=f"{str(e)}")
 
 
 @router.post("/update/{job_id}")
@@ -39,7 +40,8 @@ async def job_application(
             raise HTTPException(status_code=403, detail="Forbidden")
         return crud_job_application.update_job_application(data=request_data, db=db, job_id=job_id)
     except Exception as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        logger.error(e)
+        raise HTTPException(status_code=400, detail=f"{str(e)}")
 
 
 @router.delete("/delete/{job_id}")
@@ -53,7 +55,8 @@ async def job_application(
             raise HTTPException(status_code=403, detail="Forbidden")
         return crud_job_application.delete_job_application(job_id=job_id, user=user, db=db)
     except Exception as error:
-        raise HTTPException(status_code=400, detail=str(error))
+        logger.error(error)
+        raise HTTPException(status_code=400, detail=f"{str(error)}")
 
 
 @router.get("/get/{job_id}", response_model=ApiResponse[JobApplicationResponse])
@@ -67,7 +70,8 @@ async def job_application(
             raise HTTPException(status_code=403, detail="Forbidden")
         return crud_job_application.get_job_application_by_id(job_id=job_id, user=user, db=db)
     except Exception as error:
-        raise HTTPException(status_code=400, detail=str(error))
+        logger.error(error)
+        raise HTTPException(status_code=400, detail=f"{str(error)}")
 
 
 @router.get("/list", response_model=ApiResponse[JobApplicationListResponse])
@@ -84,7 +88,7 @@ async def job_application_list(
         return crud_job_application.get_job_applications(user=user, db=db, filters=filters, limit=limit, cursor=cursor)
     except Exception as error:
         logger.error(error)
-        raise HTTPException(status_code=400, detail=str(error))
+        raise HTTPException(status_code=400, detail=f"{str(error)}")
 
 
 @router.post("/transition/{job_id}", response_model=ApiResponse[JobApplicationStatusResponse])
@@ -100,4 +104,4 @@ async def job_application_status_transition(
         return crud_job_application.transition_job_application_status(db=db, job_id=job_id, data=data)
     except Exception as error:
         logger.error(error)
-        raise HTTPException(status_code=400, detail=str(error))
+        raise HTTPException(status_code=400, detail=f"{str(error)}")

@@ -6,6 +6,7 @@ from fastapi.routing import APIRouter
 from sqlalchemy.orm import Session
 
 from app.api.deps import get_current_user, get_db
+from app.core.logging_config import logger
 from app.crud import crud_documents
 from app.models.user import User
 from app.schemas.documents import DocumentsUpload, DocumentsLinkJobApplication, DocumentsListResponse, \
@@ -26,6 +27,7 @@ async def document(
             raise HTTPException(status_code=403, detail="Forbidden")
         return await crud_documents.upload_document(file=file, data=request_data, user_id=user.id)
     except Exception as e:
+        logger.error(e)
         raise HTTPException(status_code=400, detail=str(e))
 
 
@@ -41,6 +43,7 @@ async def documents(
             raise HTTPException(status_code=403, detail="Forbidden")
         return crud_documents.get_all_documents(db=db, filters=filters, limit=limit, user_id=user.id)
     except Exception as e:
+        logger.error(e)
         raise HTTPException(status_code=400, detail=str(e))
 
 
@@ -55,6 +58,7 @@ async def document(
             raise HTTPException(status_code=403, detail="Forbidden")
         return crud_documents.view_document(db=db, doc_id=doc_id)
     except Exception as e:
+        logger.error(e)
         raise HTTPException(status_code=400, detail=str(e))
 
 
@@ -69,6 +73,7 @@ async def document(
             raise HTTPException(status_code=403, detail="Forbidden")
         return crud_documents.delete_document(db=db, doc_id=doc_id)
     except Exception as e:
+        logger.error(e)
         raise HTTPException(status_code=400, detail=str(e))
 
 
@@ -85,6 +90,7 @@ async def link_contact_to_job_application(
             raise HTTPException(status_code=403, detail="Forbidden")
         return crud_documents.link_document_to_job_application(data=request_data, db=db, doc_id=doc_id)
     except Exception as e:
+        logger.error(e)
         raise HTTPException(status_code=400, detail=str(e))
 
 
@@ -100,6 +106,7 @@ async def unlink_contact_to_job_application(
             raise HTTPException(status_code=403, detail="Forbidden")
         return crud_documents.unlink_document_to_job_application(db=db, doc_id=doc_id)
     except Exception as e:
+        logger.error(e)
         raise HTTPException(status_code=400, detail=str(e))
 
 
@@ -114,6 +121,7 @@ async def document_status(
             raise HTTPException(status_code=403, detail="Forbidden")
         return crud_documents.get_document_status(db=db, doc_id=doc_id)
     except Exception as e:
+        logger.error(e)
         raise HTTPException(status_code=400, detail=str(e))
 
 
@@ -129,5 +137,6 @@ async def document_update(
             raise HTTPException(status_code=403, detail="Forbidden")
         return crud_documents.update_document(db=db, doc_id=doc_id, data=request_data)
     except Exception as e:
+        logger.error(e)
         raise HTTPException(status_code=400, detail=str(e))
 
