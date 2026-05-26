@@ -26,6 +26,7 @@ async def contacts(
             raise HTTPException(status_code=403, detail="Forbidden")
         return crud_contacts.create_contacts(data=request_data, user_id=user.id)
     except Exception as e:
+        logger.error(e)
         raise HTTPException(status_code=400, detail=str(e))
 
 
@@ -41,6 +42,7 @@ async def contacts(
             raise HTTPException(status_code=403, detail="Forbidden")
         return crud_contacts.update_contacts(data=request_data, db=db, contact_id=contact_id)
     except Exception as e:
+        logger.error(e)
         raise HTTPException(status_code=400, detail=str(e))
 
 
@@ -55,6 +57,7 @@ async def contacts(
             raise HTTPException(status_code=403, detail="Forbidden")
         return crud_contacts.get_contacts_by_id(contact_id=contact_id, user_id=user.id, db=db)
     except Exception as error:
+        logger.error(error)
         raise HTTPException(status_code=400, detail=str(error))
 
 
@@ -85,6 +88,7 @@ async def contacts(
             raise HTTPException(status_code=403, detail="Forbidden")
         return crud_contacts.delete_contacts(contact_id=contact_id, user_id=user.id, db=db)
     except Exception as error:
+        logger.error(error)
         raise HTTPException(status_code=400, detail=str(error))
 
 
@@ -101,4 +105,5 @@ async def link_contact_to_job_application(
             raise HTTPException(status_code=403, detail="Forbidden")
         return crud_contacts.link_contact_to_job_application(data=request_data, db=db, contact_id=contact_id)
     except Exception as e:
+        logger.error(e)
         raise HTTPException(status_code=400, detail=str(e))

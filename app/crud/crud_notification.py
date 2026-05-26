@@ -1,4 +1,3 @@
-from fastapi import HTTPException
 from sqlalchemy.orm import Session
 
 from app.core.logging_config import logger
@@ -19,7 +18,7 @@ def register_device(user_id: str, data: NotificationRegister, db: Session):
         return {"success": True, "status": "Token saved"}
     except Exception as e:
         logger.error(e)
-        raise HTTPException(status_code=400, detail="Error registering device")
+        raise Exception("Error registering device")
 
 
 def retrieve_user_tokens(user_id: str, db: Session):
@@ -28,4 +27,4 @@ def retrieve_user_tokens(user_id: str, db: Session):
         return [token.token for token in tokens]
     except Exception as e:
         logger.error(e)
-        raise HTTPException(status_code=400, detail="Error retrieving tokens")
+        raise Exception("Error retrieving tokens")

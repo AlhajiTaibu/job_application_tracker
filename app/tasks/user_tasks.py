@@ -5,8 +5,8 @@ from app.models.user import EmailVerificationOTP
 from app.services.otp_service import OTPService
 
 
-@celery_app.task(name="send_otp")
-def send_verification_email(email: str):
+@celery_app.task(bind=True,  max_retries=3)
+def send_verification_email(self, email: str):
     try:
         otp_service = OTPService()
         response = otp_service.send_otp(email)
@@ -14,10 +14,11 @@ def send_verification_email(email: str):
         return response
     except Exception as error:
         logger.error(error)
+        raise self.retry(exc=error, countdown=2 ** self.request.retries)
 
 
-@celery_app.task(name="forgot_password")
-def send_forgot_password_email(email: str, template: str, subject: str):
+@celery_app.task(bind=True,  max_retries=3, name="forgot_password")
+def send_forgot_password_email(self, email: str, template: str, subject: str):
     try:
         otp_service = OTPService()
         response = otp_service.send_otp(email, template, subject)
@@ -25,6 +26,7 @@ def send_forgot_password_email(email: str, template: str, subject: str):
         return response
     except Exception as error:
         logger.error(error)
+        raise self.retry(exc=error, countdown=2 ** self.request.retries)
 
 
 @celery_app.task()

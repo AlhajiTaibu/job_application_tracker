@@ -25,6 +25,7 @@ async def task(
             raise HTTPException(status_code=403, detail="Forbidden")
         return crud_job_task.create_job_task(data=request_data, user_id=user.id)
     except Exception as e:
+        logger.error(e)
         raise HTTPException(status_code=400, detail=str(e))
 
 
@@ -78,6 +79,7 @@ async def task(
             raise HTTPException(status_code=403, detail="Forbidden")
         return crud_job_task.update_job_task(data=request_data, task_id=task_id)
     except Exception as e:
+        logger.error(e)
         raise HTTPException(status_code=400, detail=str(e))
 
 
@@ -91,6 +93,7 @@ async def task(
             raise HTTPException(status_code=403, detail="Forbidden")
         return crud_job_task.get_task_by_id(task_id=task_id)
     except Exception as error:
+        logger.error(error)
         raise HTTPException(status_code=400, detail=str(error))
 
 
@@ -134,6 +137,7 @@ async def task(
             raise HTTPException(status_code=403, detail="Forbidden")
         return crud_job_task.snooze_job_task(data=request_data, task_id=task_id)
     except Exception as e:
+        logger.error(e)
         raise HTTPException(status_code=400, detail=str(e))
 
 
@@ -147,6 +151,7 @@ async def task(
             raise HTTPException(status_code=403, detail="Forbidden")
         return crud_job_task.complete_job_task(task_id=task_id)
     except Exception as e:
+        logger.error(e)
         raise HTTPException(status_code=400, detail=str(e))
 
 
@@ -160,4 +165,5 @@ async def task(
             raise HTTPException(status_code=403, detail="Forbidden")
         return crud_job_task.cancel_job_task(task_id=task_id)
     except Exception as e:
+        logger.error(e)
         raise HTTPException(status_code=400, detail=str(e))

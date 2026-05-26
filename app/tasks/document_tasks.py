@@ -16,13 +16,14 @@ def upload_document_task(self, data: dict, file_content: str):
         update_document(data['doc_id'], status="completed", file_key=response['file_key'])
         return response
     except Exception as error:
+        logger.error(error)
         if self.request.retries >= self.max_retries:
             update_document(data['doc_id'], status="failed", error=str(error))
         raise self.retry(exc=error, countdown=2 ** self.request.retries)
 
 
-@celery_app.task()
-def upload_image_task(data: dict, file_content: str):
+@celery_app.task(bind=True,  max_retries=3)
+def upload_image_task(self, data: dict, file_content: str):
     try:
         document_service = DocumentService("images")
         response = document_service.upload_image(data=data, file_content=file_content)
@@ -30,11 +31,11 @@ def upload_image_task(data: dict, file_content: str):
         return response
     except Exception as error:
         logger.error(error)
-        raise Exception(str(error))
+        raise self.retry(exc=error, countdown=2 ** self.request.retries)
 
 
-@celery_app.task()
-def delete_image_task(file_key: str):
+@celery_app.task(bind=True,  max_retries=3)
+def delete_image_task(self, file_key: str):
     try:
         document_service = DocumentService("images")
         response = document_service.delete_image(file_key=file_key)
@@ -42,7 +43,7 @@ def delete_image_task(file_key: str):
         return response
     except Exception as error:
         logger.error(error)
-        raise Exception(str(error))
+        raise self.retry(exc=error, countdown=2 ** self.request.retries)
 
 
 def update_document(document_id, status=None, error=None, file_key=None):
