@@ -20,7 +20,7 @@ class ApiResponse(BaseModel, Generic[T]):
 
 class JobApplicationCreate(BaseModel):
     company_name: str
-    job_url: str
+    job_url: Optional[str] = None
     job_title: str
     description: str
     source: str

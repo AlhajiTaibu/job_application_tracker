@@ -41,7 +41,7 @@ class JobApplication(Base):
     contacts = relationship("Contacts", secondary=association_table, back_populates="job_applications")
     documents = relationship("Documents", secondary=documents_association_table, back_populates="job_applications")
     company_name = Column(String(255), nullable=False, index=True)
-    job_url = Column(String(255), nullable=False)
+    job_url = Column(String(255), nullable=True)
     job_title = Column(String(255), nullable=False, index=True)
     description = Column(String)
     status = Column(String(255), nullable=False, index=True)
