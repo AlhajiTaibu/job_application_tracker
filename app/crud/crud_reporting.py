@@ -95,7 +95,7 @@ def process_interview_rounds(df):
     outcome_counts = df['outcome'].value_counts().to_dict()
     outcome_percentages = {k: round((int(v) / len(df)) * 100, 2) for k, v in outcome_counts.items()}
     return {
-        "total interviews": len(df),
+        "total_interviews": len(df),
         "passed": outcome_counts['passed'],
         "passed_percentage": outcome_percentages['passed']
     }
