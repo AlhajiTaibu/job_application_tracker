@@ -116,7 +116,17 @@ class JobApplicationStateMachine:
             task.save_to_db()
 
     def _handle_screening_to_interviewing(self, job_app: JobApplication, metadata: Dict[str, Any] = None):
-        pass
+        db_interview = self.db.query(Interview).filter(Interview.job_application_id == job_app.id).order_by(
+            desc(Interview.created_at)).all()
+        self.db.close()
+        if not db_interview:
+            new_interview = Interview(
+                job_application_id=job_app.id,
+                round=1,
+                outcome="pending"
+            )
+            new_interview.save_to_db()
+
 
     def _handle_interviewing_to_offer(self, job_app: JobApplication, metadata: Dict[str, Any] = None):
         task_service.create_task(
@@ -128,6 +138,7 @@ class JobApplicationStateMachine:
         )
         db_interview = self.db.query(Interview).filter(Interview.job_application_id == job_app.id).order_by(
             desc(Interview.created_at)).all()
+        self.db.close()
         if not db_interview:
             raise Exception("No interview on job application")
         else:
