@@ -371,7 +371,7 @@ async def weekly_application_activity(db: Session, user_id: str):
     try:
         job_applications = await retrieve_applications_with_status_history_from_db(db, user_id)
         job_df = pd.DataFrame(job_applications)
-        stats = {}
+        stats = []
         if not job_df.empty:
             job_df = job_df[job_df['to_status'] == 'applied']
             job_df.drop_duplicates(subset=['job_id', 'history_id'], keep='first', inplace=True)
