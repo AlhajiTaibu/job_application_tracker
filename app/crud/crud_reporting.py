@@ -122,15 +122,15 @@ def calculate_idle_period(data):
 
 
 async def retrieve_applications_with_status_history_from_db(db: Session, user_id: str):
-    key = f"job_applications_status_history:{user_id}"
-    redis_key = f"{key}:lock"
-    data = await redis_manager.get_value(redis_key)
-    if data:
-        result = json.loads(data)
-        return result
-    else:
+    # key = f"job_applications_status_history:{user_id}"
+    # redis_key = f"{key}:lock"
+    # data = await redis_manager.get_value(redis_key)
+    # if data:
+    #     result = json.loads(data)
+    #     return result
+    # else:
         job_application_json_str, job_application_rows_dict = get_applications_with_status_history(db, user_id)
-        await redis_manager.set_value(redis_key, job_application_json_str, 86400)
+        # await redis_manager.set_value(redis_key, job_application_json_str, 86400)
         return job_application_rows_dict
 
 
@@ -161,15 +161,15 @@ def get_applications_with_status_history(db: Session, user_id: str):
 
 
 async def retrieve_user_interviews(db: Session, user_id: str):
-    key = f"user_interviews:{user_id}"
-    redis_key = f"{key}:lock"
-    data = await redis_manager.get_value(redis_key)
-    if data:
-        result = json.loads(data)
-        return result
-    else:
+    # key = f"user_interviews:{user_id}"
+    # redis_key = f"{key}:lock"
+    # data = await redis_manager.get_value(redis_key)
+    # if data:
+    #     result = json.loads(data)
+    #     return result
+    # else:
         interviews_json_str, interviews_rows_dict = get_user_interviews(db, user_id)
-        await redis_manager.set_value(redis_key, interviews_json_str, 86400)
+        # await redis_manager.set_value(redis_key, interviews_json_str, 86400)
         return interviews_rows_dict
 
 
@@ -199,15 +199,15 @@ def get_user_interviews(db: Session, user_id: str):
 
 
 async def retrieve_user_tasks(db: Session, user_id: str):
-    key = f"user_task:{user_id}"
-    redis_key = f"{key}:lock"
-    data = await redis_manager.get_value(redis_key)
-    if data:
-        result = json.loads(data)
-        return result
-    else:
+    # key = f"user_task:{user_id}"
+    # redis_key = f"{key}:lock"
+    # data = await redis_manager.get_value(redis_key)
+    # if data:
+    #     result = json.loads(data)
+    #     return result
+    # else:
         task_json_str, tasks_rows_dict = get_user_tasks(db, user_id)
-        await redis_manager.set_value(redis_key, task_json_str, 86400)
+        # await redis_manager.set_value(redis_key, task_json_str, 86400)
         return tasks_rows_dict
 
 
