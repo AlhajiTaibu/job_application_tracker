@@ -1,3 +1,5 @@
+import ssl
+
 from redis.asyncio import Redis
 from typing import Optional
 from app.core.config import settings
@@ -13,27 +15,33 @@ class RedisManager:
         self.redis_client: Optional[Redis] = None
 
     async def init_redis(self):
-        self.redis_client = Redis(
-            host=self.redis_host,
-            password=self.password,
-            port=self.redis_port,
-            username=self.redis_user,
-            db=1,
-            decode_responses=True if settings.is_prod else False,
-            socket_timeout=5,
-            retry_on_timeout=True,
-            ssl=True if settings.is_prod else False,
-            max_connections=20
-        )
+        if self.redis_client is None:
+            self.redis_client = Redis(
+                host=self.redis_host,
+                password=self.password,
+                port=self.redis_port,
+                username=self.redis_user,
+                db=0,
+                decode_responses=settings.is_prod,
+                socket_connect_timeout=5,
+                socket_keepalive=True,
+                socket_timeout=5,
+                retry_on_timeout=True,
+                ssl=settings.is_prod,
+                max_connections=20,
+                ssl_cert_reqs=ssl.CERT_NONE
+            )
         return self.redis_client
+
     async def close_redis(self):
-        """Cleanly close the pool."""
         if self.redis_client:
             await self.redis_client.aclose()
+            self.redis_client = None
 
     async def get_client(self):
-        if self.redis_client:
-            return self.redis_client
+        if self.redis_client is None:
+            await self.init_redis()
+        return self.redis_client
 
     async def set_value(self, key: str, value: str, expire_time: int = 3600):
         try:
@@ -45,8 +53,7 @@ class RedisManager:
     async def get_value(self, key: str):
         try:
             client = await self.get_client()
-            value = await client.get(key)
-            return value
+            return await client.get(key)
         except Exception as error:
             logger.error(error)
             return None
@@ -57,5 +64,6 @@ class RedisManager:
             await client.delete(key)
         except Exception as error:
             logger.error(error)
+
 
 redis_manager = RedisManager()
