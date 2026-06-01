@@ -60,7 +60,6 @@ def update_interview(data: InterviewUpdate, interview_id: str, db: Session):
         db_interview.notes = data.notes if data.notes else db_interview.notes
         db_interview.format = data.format if data.format else db_interview.format
         db_interview.round = data.round if data.round else db_interview.round
-        db_interview.outcome = data.outcome if data.outcome else db_interview.outcome
         db_interview.feedback = data.feedback if data.feedback else db_interview.feedback
         db_interview.interviewer_name = data.interviewer_name if data.interviewer_name else db_interview.interviewer_name
         db_interview.timezone = data.timezone if data.timezone else db_interview.timezone
@@ -133,12 +132,18 @@ def get_upcoming_interviews(user_id: str, db: Session, limit: int):
                 JobApplication.user_id,
                 JobApplication.company_name,
                 JobApplication.job_title,
+                Interview.id,
                 Interview.job_application_id,
                 Interview.format,
                 Interview.round,
                 Interview.outcome,
                 Interview.date,
-                Interview.time
+                Interview.time,
+                Interview.timezone,
+                Interview.interviewer_name,
+                Interview.actual_duration,
+                Interview.estimated_duration,
+                Interview.created_at
             )
             .join(Interview, JobApplication.id == Interview.job_application_id)
             .where(or_(Interview.outcome == "scheduled",Interview.outcome =="pending"))
@@ -159,10 +164,11 @@ def get_interviews_history(user_id: str, db: Session, filters: InterviewFilterPa
     try:
         stmt = (
             select(
-                JobApplication.id,
+                JobApplication.id.label("job_id"),
                 JobApplication.user_id,
                 JobApplication.company_name,
                 JobApplication.job_title,
+                Interview.id,
                 Interview.job_application_id,
                 Interview.format,
                 Interview.round,
@@ -170,6 +176,9 @@ def get_interviews_history(user_id: str, db: Session, filters: InterviewFilterPa
                 Interview.interviewer_name,
                 Interview.date,
                 Interview.time,
+                Interview.timezone,
+                Interview.actual_duration,
+                Interview.estimated_duration,
                 Interview.created_at
             )
             .join(Interview, JobApplication.id == Interview.job_application_id)

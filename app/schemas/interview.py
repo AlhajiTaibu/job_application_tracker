@@ -1,3 +1,4 @@
+from datetime import datetime
 import uuid
 from datetime import date, time
 from typing import List, Optional, Literal
@@ -69,13 +70,19 @@ class InterviewList(BaseModel):
 class InterviewJoin(BaseModel):
     id: uuid.UUID
     user_id: uuid.UUID
+    job_application_id: uuid.UUID
     company_name: str
     job_title: str
     format: Optional[str]
+    interviewer_name: Optional[str]
     round: Optional[int]
     outcome: Optional[str]
     date: Optional[date]
     time: Optional[time]
+    estimated_duration: Optional[str]
+    actual_duration: Optional[str]
+    timezone: Optional[str]
+    created_at: Optional[datetime]
 
 
 class InterviewJoinList(BaseModel):
