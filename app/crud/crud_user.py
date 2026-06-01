@@ -122,7 +122,7 @@ def create_profile_via_google_login(user: GoogleUserPayload, db_user: User):
 
 def create_blacklisted_token(db: Session, token: RefreshToken):
     refresh_token = token.refresh_token
-    blacklisted_token = BlacklistedToken(refresh_token)
+    blacklisted_token = BlacklistedToken(token=refresh_token)
     db.add(blacklisted_token)
     db.commit()
     db.refresh(blacklisted_token)
