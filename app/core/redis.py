@@ -51,6 +51,7 @@ class RedisManager:
             self.pool = ConnectionPool.from_url(redis_url, **pool_kwargs)
             self.redis_client = Redis(connection_pool=self.pool)
             logger.info("Redis Async URL Connection Pool initialized successfully.")
+            logger.info(f"[Redis Init] URL={redis_url} | is_prod={settings.is_prod}")
 
         return self.redis_client
 
