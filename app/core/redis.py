@@ -1,5 +1,8 @@
 import ssl
-from redis.asyncio import Redis, ConnectionPool, SSLConnection
+from redis.asyncio import Redis, ConnectionPool
+from redis.asyncio.retry import Retry
+from redis.backoff import ExponentialBackoff
+from redis.exceptions import ConnectionError, TimeoutError
 from typing import Optional
 from app.core.config import settings
 from app.core.logging_config import logger
@@ -33,9 +36,8 @@ class RedisManager:
                 "retry_on_timeout": True,
                 "max_connections": 50,
                 "health_check_interval": 30,
-                # Native redis-py retry configuration (no complex imports required)
+                "retry": Retry(ExponentialBackoff(cap=2, base=0.5), 3),
                 "retry_on_error": [ConnectionError, TimeoutError],
-                "retry": "exponential",  # Uses built-in exponential backoff string
             }
 
             # 3. Only apply context-specific SSL options if we are in production
