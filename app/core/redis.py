@@ -19,23 +19,31 @@ class RedisManager:
     async def init_redis(self):
         if self.pool is None:
             # Create an EXPLICIT connection pool. This is the fix.
-            self.pool = ConnectionPool(
-                host=self.redis_host,
-                password=self.password,
-                port=self.redis_port,
-                username=self.redis_user,
-                db=0,
-                decode_responses=True,  # Keep consistent across Dev and Prod
-                socket_connect_timeout=15,
-                socket_timeout=15,
-                socket_keepalive=True,
-                retry_on_timeout=True,
-                ssl=settings.is_prod,
-                ssl_cert_reqs=ssl.CERT_NONE if settings.is_prod else None,
-                max_connections=50,
-                health_check_interval=30
-            )
-            # Bind the client directly to the managed pool
+            pool_kwargs = {
+                "host": self.redis_host,
+                "password": self.password,
+                "port": self.redis_port,
+                "username": self.redis_user,
+                "db": 0,
+                "decode_responses": True,
+                "socket_connect_timeout": 15,
+                "socket_timeout": 15,
+                "socket_keepalive": True,
+                "retry_on_timeout": True,
+                "max_connections": 50,
+                "health_check_interval": 30
+            }
+
+            # 2. Only inject SSL parameters if we are in Production
+            if settings.is_prod:
+                pool_kwargs["ssl"] = True
+                pool_kwargs["ssl_cert_reqs"] = ssl.CERT_NONE
+                logger.info("Configuring Redis Async Pool with SSL (Production).")
+            else:
+                logger.info("Configuring Redis Async Pool without SSL (Development).")
+
+            # 3. Unpack the dictionary cleanly into the Pool constructor
+            self.pool = ConnectionPool(**pool_kwargs)
             self.redis_client = Redis(connection_pool=self.pool)
             logger.info("Redis Async Connection Pool initialized successfully.")
 
