@@ -3,6 +3,7 @@ from celery.schedules import crontab
 
 from app.core.config import settings
 import ssl
+import socket
 
 # Initialize Celery
 celery_app = Celery(
@@ -71,9 +72,9 @@ celery_app.conf.update(
         "socket_connect_timeout": 30,
         "socket_keepalive": True,
         "socket_keepalive_options": {
-            "TCP_KEEPIDLE": 60,
-            "TCP_KEEPINTVL": 10,
-            "TCP_KEEPCNT": 5,
+            socket.TCP_KEEPIDLE: 60,  # not "TCP_KEEPIDLE"
+            socket.TCP_KEEPINTVL: 10,
+            socket.TCP_KEEPCNT: 5,
         },
         "retry_on_timeout": True,
         "health_check_interval": 25,
