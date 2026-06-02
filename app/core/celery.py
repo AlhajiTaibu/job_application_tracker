@@ -1,6 +1,5 @@
 from celery import Celery
 from celery.schedules import crontab
-import ssl
 
 from app.core.config import settings
 import ssl
@@ -52,10 +51,31 @@ celery_app.conf.update(
     worker_pool="threads",
     worker_concurrency=4,
     worker_prefetch_multiplier=1,
-    broker_use_ssl = {
+    broker_connection_retry=True,
+    broker_connection_retry_on_startup=True,
+    broker_connection_max_retries=None,  # retry forever
+    worker_cancel_long_running_tasks_on_connection_loss=True,
+
+    broker_use_ssl={
         "ssl_cert_reqs": ssl.CERT_NONE
     } if settings.is_prod else {},
-    redis_backend_use_ssl = {
+
+    redis_backend_use_ssl={
         "ssl_cert_reqs": ssl.CERT_NONE
     } if settings.is_prod else {},
+
+    # ↓ all transport-level options must live here
+    broker_transport_options={
+        "visibility_timeout": 3600,
+        "socket_timeout": 30,
+        "socket_connect_timeout": 30,
+        "socket_keepalive": True,
+        "socket_keepalive_options": {
+            "TCP_KEEPIDLE": 60,
+            "TCP_KEEPINTVL": 10,
+            "TCP_KEEPCNT": 5,
+        },
+        "retry_on_timeout": True,
+        "health_check_interval": 25,
+    },
 )
