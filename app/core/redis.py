@@ -32,7 +32,10 @@ class RedisManager:
                 "socket_keepalive": True,
                 "retry_on_timeout": True,
                 "max_connections": 50,
-                "health_check_interval": 30
+                "health_check_interval": 30,
+                # Native redis-py retry configuration (no complex imports required)
+                "retry_on_error": [ConnectionError, TimeoutError],
+                "retry": "exponential",  # Uses built-in exponential backoff string
             }
 
             # 3. Only apply context-specific SSL options if we are in production
