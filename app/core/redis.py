@@ -23,12 +23,12 @@ class RedisManager:
                 username=self.redis_user,
                 db=0,
                 decode_responses=settings.is_prod,
-                socket_connect_timeout=5,
+                socket_connect_timeout=15,
                 socket_keepalive=True,
-                socket_timeout=5,
+                socket_timeout=15,
                 retry_on_timeout=True,
                 ssl=settings.is_prod,
-                max_connections=20,
+                max_connections=50,
                 ssl_cert_reqs=ssl.CERT_NONE,
                 health_check_interval=30
             )
