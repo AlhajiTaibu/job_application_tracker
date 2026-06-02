@@ -1,11 +1,8 @@
 import time
 
-from fastapi import Request, status
+from fastapi import Request
 from fastapi.responses import JSONResponse
-from redis.asyncio import Redis
 from starlette.middleware.base import BaseHTTPMiddleware
-
-from app.core.config import settings
 from app.core.logging_config import logger
 
 

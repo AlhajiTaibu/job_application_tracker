@@ -15,19 +15,15 @@ class RedisManager:
         self.redis_port = settings.redis_port
         self.redis_user = settings.redis_user
 
-        # Keep track of both the pool and the client interface
         self.pool: Optional[ConnectionPool] = None
         self.redis_client: Optional[Redis] = None
 
     async def init_redis(self):
         if self.pool is None:
-            # 1. Dynamically build a standard Redis URL based on the environment
             protocol = "rediss" if settings.is_prod else "redis"
 
-            # Format: rediss://username:password@host:port/0
             redis_url = f"{protocol}://{self.redis_user}:{self.password}@{self.redis_host}:{self.redis_port}/0"
 
-            # 2. Build our standard pool arguments
             pool_kwargs = {
                 "decode_responses": True,
                 "socket_connect_timeout": 15,
@@ -40,24 +36,20 @@ class RedisManager:
                 "retry_on_error": [ConnectionError, TimeoutError],
             }
 
-            # 3. Only apply context-specific SSL options if we are in production
             if settings.is_prod:
                 logger.info("Parsing Aiven production connection via secure SSL URL pool.")
                 pool_kwargs["ssl_cert_reqs"] = ssl.CERT_NONE
             else:
                 logger.info("Parsing local connection via unencrypted URL pool.")
 
-            # 4. Use from_url to let redis-py configure itself natively
             self.pool = ConnectionPool.from_url(redis_url, **pool_kwargs)
             self.redis_client = Redis(connection_pool=self.pool)
             logger.info("Redis Async URL Connection Pool initialized successfully.")
-            logger.info(f"[Redis Init] URL={redis_url} | is_prod={settings.is_prod}")
 
         return self.redis_client
 
     async def close_redis(self):
         if self.redis_client:
-            # Safely disconnect all active connections in the pool
             await self.pool.disconnect()
             self.redis_client = None
             self.pool = None
@@ -91,5 +83,4 @@ class RedisManager:
             logger.error(f"Redis DELETE Error: {error}")
 
 
-# Instantiate the singleton
 redis_manager = RedisManager()
