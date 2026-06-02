@@ -29,7 +29,8 @@ class RedisManager:
                 retry_on_timeout=True,
                 ssl=settings.is_prod,
                 max_connections=20,
-                ssl_cert_reqs=ssl.CERT_NONE
+                ssl_cert_reqs=ssl.CERT_NONE,
+                health_check_interval=30
             )
         return self.redis_client
 

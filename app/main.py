@@ -32,13 +32,13 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# if settings.is_prod:
-#     app.add_middleware(
-#         SimpleRateLimitMiddleware,
-#         exclude_paths=["/docs", "/redoc", "/openapi.json"],
-#         limit=settings.rate_limiter_limit,  # Allow 100 requests
-#         window=60,  # Per minute
-#     )
+if settings.is_prod:
+    app.add_middleware(
+        SimpleRateLimitMiddleware,
+        exclude_paths=["/docs", "/redoc", "/openapi.json"],
+        limit=settings.rate_limiter_limit,  # Allow 100 requests
+        window=60,  # Per minute
+    )
 
 app.include_router(api_router, prefix="/api/v1")
 
