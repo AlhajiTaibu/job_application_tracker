@@ -1,5 +1,5 @@
 import ssl
-from redis.asyncio import Redis, ConnectionPool
+from redis.asyncio import Redis, ConnectionPool, SSLConnection
 from typing import Optional
 from app.core.config import settings
 from app.core.logging_config import logger
@@ -18,13 +18,14 @@ class RedisManager:
 
     async def init_redis(self):
         if self.pool is None:
-            # Create an EXPLICIT connection pool. This is the fix.
+            # 1. Dynamically build a standard Redis URL based on the environment
+            protocol = "rediss" if settings.is_prod else "redis"
+
+            # Format: rediss://username:password@host:port/0
+            redis_url = f"{protocol}://{self.redis_user}:{self.password}@{self.redis_host}:{self.redis_port}/0"
+
+            # 2. Build our standard pool arguments
             pool_kwargs = {
-                "host": self.redis_host,
-                "password": self.password,
-                "port": self.redis_port,
-                "username": self.redis_user,
-                "db": 0,
                 "decode_responses": True,
                 "socket_connect_timeout": 15,
                 "socket_timeout": 15,
@@ -34,18 +35,17 @@ class RedisManager:
                 "health_check_interval": 30
             }
 
-            # 2. Only inject SSL parameters if we are in Production
+            # 3. Only apply context-specific SSL options if we are in production
             if settings.is_prod:
-                pool_kwargs["ssl"] = True
+                logger.info("Parsing Aiven production connection via secure SSL URL pool.")
                 pool_kwargs["ssl_cert_reqs"] = ssl.CERT_NONE
-                logger.info("Configuring Redis Async Pool with SSL (Production).")
             else:
-                logger.info("Configuring Redis Async Pool without SSL (Development).")
+                logger.info("Parsing local connection via unencrypted URL pool.")
 
-            # 3. Unpack the dictionary cleanly into the Pool constructor
-            self.pool = ConnectionPool(**pool_kwargs)
+            # 4. Use from_url to let redis-py configure itself natively
+            self.pool = ConnectionPool.from_url(redis_url, **pool_kwargs)
             self.redis_client = Redis(connection_pool=self.pool)
-            logger.info("Redis Async Connection Pool initialized successfully.")
+            logger.info("Redis Async URL Connection Pool initialized successfully.")
 
         return self.redis_client
 
