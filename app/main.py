@@ -16,9 +16,16 @@ from app.database import engine
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    app.state.redis = await redis_manager.init_redis()
+    # 1. Initialize the managed pool and get the client instance
+    redis_client = await redis_manager.init_redis()
+
+    # 2. Store it cleanly in app.state for your middleware to consume
+    app.state.redis = redis_client
+
     yield
-    await app.state.redis.close()
+
+    # 3. Clean up the connection pool on shutdown
+    await redis_manager.close_redis()
 
 app = FastAPI(title=settings.PROJECT_NAME, version=settings.PROJECT_VERSION, lifespan=lifespan)
 
