@@ -61,3 +61,8 @@ def root():
 @app.get("/health")
 def health():
     return {"status": "ok"}
+
+@app.get("/debug/redis")
+async def debug_redis():
+    result = await app.state.redis.ping()
+    return {"ping": result}
