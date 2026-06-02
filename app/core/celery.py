@@ -68,7 +68,7 @@ celery_app.conf.update(
     # ↓ all transport-level options must live here
     broker_transport_options={
         "visibility_timeout": 3600,
-        "socket_timeout": 30,
+        "socket_timeout": None,
         "socket_connect_timeout": 30,
         "socket_keepalive": True,
         "socket_keepalive_options": {
