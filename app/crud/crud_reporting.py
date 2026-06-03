@@ -39,7 +39,7 @@ def process_job_application_data(job_applications) -> dict[str, Any]:
     }
     if not job_df.empty:
         job_df.drop_duplicates(subset=['job_id', 'history_id'], keep='first', inplace=True)
-        job_df['created_at'] = pd.to_datetime(job_df['created_at'])
+        job_df['created_at'] = pd.to_datetime(job_df['created_at'], format='ISO8601')
 
         applied_job_df = job_df[job_df['to_status'] == 'applied']
         if not applied_job_df.empty:
@@ -291,7 +291,7 @@ async def time_in_stage_analytics(db: Session, user_id: str):
         stats = {}
         if not job_df.empty:
             job_df.drop_duplicates(subset=['job_id', 'history_id'], keep='first', inplace=True)
-            job_df['created_at'] = pd.to_datetime(job_df['created_at'])
+            job_df['created_at'] = pd.to_datetime(job_df['created_at'], format='ISO8601')
             applied_job_df = job_df[job_df['to_status'] == 'applied']
             screened_job_df = job_df[job_df['to_status'] == 'screening']
             applied_to_screening_job_df = pd.merge(applied_job_df[['job_id', 'from_status', 'to_status', 'created_at']],
@@ -375,7 +375,7 @@ async def weekly_application_activity(db: Session, user_id: str):
         if not job_df.empty:
             job_df = job_df[job_df['to_status'] == 'applied']
             job_df.drop_duplicates(subset=['job_id', 'history_id'], keep='first', inplace=True)
-            job_df['created_at'] = pd.to_datetime(job_df['created_at'])
+            job_df['created_at'] = pd.to_datetime(job_df['created_at'], format='ISO8601')
             job_df['week_number'] = job_df['created_at'].apply(lambda t: t.isocalendar().week)
             job_df['week_period'] = job_df['created_at'].dt.to_period('W')
             job_df['week'] = job_df['created_at'].dt.to_period('W').apply(lambda r: r.start_time)
@@ -422,7 +422,7 @@ async def follow_up_analytics(db: Session, user_id: str):
             return {}
         tasks_df = tasks_df[tasks_df['to_status'].isin(['screening', 'assessment', 'interviewing'])]
         tasks_df.drop_duplicates(subset=['task_id'], keep='first', inplace=True)
-        tasks_df['created_at'] = pd.to_datetime(tasks_df['created_at'])
+        tasks_df['created_at'] = pd.to_datetime(tasks_df['created_at'], format='ISO8601')
         follow_up_tasks_df = tasks_df[tasks_df['task_type'] == TaskType.FOLLOW_UP.value]
         followed_up_tasks_df = follow_up_tasks_df[follow_up_tasks_df['status'] == TaskStatus.COMPLETED.value]
         unfollowed_up_tasks_df = follow_up_tasks_df[
@@ -449,8 +449,8 @@ async def health_view_analytics(db: Session, user_id: str):
         stats = {}
         if not job_df.empty:
             job_df.drop_duplicates(subset=['job_id', 'history_id'], keep='first', inplace=True)
-            job_df['created_at'] = pd.to_datetime(job_df['created_at'])
-            job_df['updated_at'] = pd.to_datetime(job_df['updated_at'])
+            job_df['created_at'] = pd.to_datetime(job_df['created_at'], format='ISO8601')
+            job_df['updated_at'] = pd.to_datetime(job_df['updated_at'], format='ISO8601')
             active_job_df = job_df[job_df['status'].isin(['applied', 'screening', 'interviewing', 'assessment'])]
             if not active_job_df.empty:
                 active_job_df['is_normal_progress'] = active_job_df.apply(lambda col: check_progress(col, time_in_stage),axis=1)
@@ -466,9 +466,9 @@ async def health_view_analytics(db: Session, user_id: str):
         tasks_df = pd.DataFrame(tasks)
         if not tasks_df.empty:
             tasks_df.drop_duplicates(subset=['task_id'], keep='first', inplace=True)
-            tasks_df['due_date'] = pd.to_datetime(tasks_df['due_date'])
+            tasks_df['due_date'] = pd.to_datetime(tasks_df['due_date'], format='ISO8601')
             tasks_df['due_date'] = tasks_df['due_date'].fillna((datetime.now() - timedelta(days=1)))
-            tasks_df['due_date'] = pd.to_datetime(tasks_df['due_date'])
+            tasks_df['due_date'] = pd.to_datetime(tasks_df['due_date'], format='ISO8601')
             tasks_df = tasks_df[tasks_df['status'].isin([TaskStatus.PENDING.value])]
             tasks_df['is_overdue'] = np.where(tasks_df['due_date'] < datetime.now(), True, False)
             upcoming_tasks_df = tasks_df[tasks_df['is_overdue'] == False]
@@ -490,8 +490,8 @@ def weekly_digest(db: Session, user_id: str, period: datetime):
         stats = {}
         if not job_df.empty:
             job_df.drop_duplicates(subset=['job_id', 'history_id'], keep='first', inplace=True)
-            job_df['created_at'] = pd.to_datetime(job_df['created_at'])
-            job_df['updated_at'] = pd.to_datetime(job_df['updated_at'])
+            job_df['created_at'] = pd.to_datetime(job_df['created_at'], format='ISO8601')
+            job_df['updated_at'] = pd.to_datetime(job_df['updated_at'], format='ISO8601')
             follow_up_due_applied_jobs_df = job_df[
                 (job_df['status'] == 'applied') & (period - job_df['updated_at']).dt.days.isin([1, 2, 3, 4, 5, 6])]
             applied_jobs_df = job_df[job_df['to_status'] == 'applied']
@@ -523,9 +523,9 @@ def weekly_digest(db: Session, user_id: str, period: datetime):
         if not tasks_df.empty:
             tasks_df.drop_duplicates(subset=['job_id', 'to_status'], keep='first', inplace=True)
             tasks_df['due_date'] = tasks_df['due_date'].fillna((datetime.now() - timedelta(days=1)))
-            tasks_df['due_date'] = pd.to_datetime(tasks_df['due_date'])
-            tasks_df['updated_at'] = pd.to_datetime(tasks_df['updated_at'])
-            tasks_df['job_task_created_at'] = pd.to_datetime(tasks_df['job_task_created_at'])
+            tasks_df['due_date'] = pd.to_datetime(tasks_df['due_date'], format='ISO8601')
+            tasks_df['updated_at'] = pd.to_datetime(tasks_df['updated_at'], format='ISO8601')
+            tasks_df['job_task_created_at'] = pd.to_datetime(tasks_df['job_task_created_at'], format='ISO8601')
             completed_tasks_df = tasks_df[tasks_df['status'].isin([TaskStatus.COMPLETED.value])]
             completed_tasks_df = completed_tasks_df[completed_tasks_df['updated_at'] >= period_start_date]
             pending_tasks_df = tasks_df[(tasks_df['job_task_created_at'] >= period_start_date) & (
@@ -541,8 +541,8 @@ def weekly_digest(db: Session, user_id: str, period: datetime):
         interviews_df = pd.DataFrame(interviews)
         if not interviews_df.empty:
             interviews_df.drop_duplicates(subset=['interview_id'], keep='first', inplace=True)
-            interviews_df['created_at'] = pd.to_datetime(interviews_df['created_at'])
-            interviews_df['date'] = pd.to_datetime(interviews_df['date']).dt.date
+            interviews_df['created_at'] = pd.to_datetime(interviews_df['created_at'], format='ISO8601')
+            interviews_df['date'] = pd.to_datetime(interviews_df['date'], format='ISO8601').dt.date
             interviews_df = interviews_df[interviews_df['created_at'] >= period_start_date]
             completed_interviews_df = interviews_df[interviews_df['outcome'].isin(['passed', 'rejected'])]
             completed_interviews_count = len(completed_interviews_df)

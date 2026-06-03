@@ -1,16 +1,15 @@
 import uuid
 from datetime import datetime
 from typing import Literal, Optional, List
+from fastapi.params import Query
 
 from pydantic import BaseModel
-
-from app.models.job_application import TaskType
 
 
 class JobTaskCreate(BaseModel):
     job_application_id: Optional[uuid.UUID]
     name: str
-    task_type: TaskType
+    task_type: Literal["follow_up", "confirm", "reminder", "thank_you", "review", "other"]
     due_date: str
 
 
@@ -29,6 +28,8 @@ class JobTaskDetail(BaseModel):
     task_type: Literal["follow_up", "confirm", "reminder", "thank_you", "review", "other"]
     due_date: Optional[datetime]
     is_overdue: bool
+    created_at: datetime
+    updated_at: Optional[datetime]
 
 
 class JobTaskList(BaseModel):
@@ -37,3 +38,18 @@ class JobTaskList(BaseModel):
 
 class JobTaskSnooze(BaseModel):
     period: int
+
+class JobTaskFilterParams:
+    def __init__(
+            self,
+            status: Optional[str] = None,
+            task_type: Optional[str] = None,
+            q: Optional[str] = Query(None, min_length=3, description="Search term"),
+            sort_by: str = Query("created_at", pattern="^(created_at|status|task_type|updated_at)$"),
+            order: str = Query("desc", pattern="^(asc|desc)$")
+    ):
+        self.task_type = task_type
+        self.status = status
+        self.sort_by = sort_by
+        self.order = order
+        self.q = q

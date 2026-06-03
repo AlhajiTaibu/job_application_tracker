@@ -1,12 +1,13 @@
 from datetime import datetime, timedelta
 from typing import Dict, Any
 
-from sqlalchemy import or_, and_
+from sqlalchemy import or_, and_, desc, select, asc
+from sqlalchemy.testing import db
 
 from app.core.logging_config import logger
 from app.database import SessionLocal
 from app.models.job_application import JobTask, TaskType, TaskCreator, TaskStatus, JobApplication, SnoozeJobTask
-from app.schemas.job_task import JobTaskUpdate
+from app.schemas.job_task import JobTaskUpdate, JobTaskFilterParams
 from dateutil import parser
 
 
@@ -31,7 +32,7 @@ class TaskService:
             if meta_data:
                 if "user_id" in meta_data:
                     task.user_id = meta_data["user_id"]
-                if "job_application_id" in meta_data:
+                if "job_application_id" in meta_data and meta_data["job_application_id"]:
                     job = self.db.query(JobApplication).where(
                         JobApplication.id == meta_data["job_application_id"]).first()
                     if not job:
@@ -55,7 +56,7 @@ class TaskService:
             self.db.close()
             if not task:
                 raise Exception("Task not found")
-            task.name = data.name if data.name in data else task.name
+            task.name = data.name if data.name else task.name
             task.due_date = parser.parse(data.due_date) if data.due_date else task.due_date
             task.task_type = data.task_type if data.task_type else task.task_type
             task.status = data.status if data.status else task.status
@@ -86,56 +87,91 @@ class TaskService:
 
     def get_tasks(self, job_id: str, limit: int):
         try:
-            db_task = self.db.query(JobTask).filter(JobTask.job_application_id == job_id).limit(limit).all()
+            db_task = self.db.query(JobTask).filter(JobTask.job_application_id == job_id).order_by(desc(JobTask.created_at)).limit(limit).all()
             results = db_task if db_task else []
             return results
         except Exception as error:
             logger.error(error)
             raise Exception("Error retrieving tasks")
 
-    def get_daily_tasks(self, user_id: str):
+    def get_daily_tasks(self, user_id: str, filters: JobTaskFilterParams):
         try:
             today = datetime.now().date()
-            db_tasks = self.db.query(JobTask).filter(
+            stmt = select(JobTask).filter(
                 JobTask.user_id == user_id,
                 JobTask.is_overdue == False,
                 JobTask.due_date == today,
-                JobTask.status == TaskStatus.PENDING
-            ).all()
+                or_(JobTask.status == TaskStatus.PENDING,JobTask.status == TaskStatus.SNOOZED)
+            )
+            if filters.status:
+                stmt = stmt.where(JobTask.status == filters.status)
+            if filters.task_type:
+                stmt = stmt.where(JobTask.task_type == filters.task_type)
+
+            if filters.order == "desc":
+                stmt = stmt.order_by(desc(JobTask.created_at))
+            else:
+                stmt = stmt.order_by(asc(JobTask.created_at))
+
+            db_tasks = self.db.execute(stmt).scalars().all()
             return db_tasks
         except Exception as error:
             logger.error(error)
             raise Exception("Error retrieving daily tasks")
 
-    def get_upcoming_tasks(self, user_id: str, days: int):
+    def get_upcoming_tasks(self, user_id: str, days: int, filters: JobTaskFilterParams):
         try:
             if days <= 0:
                 raise Exception("Days must be greater than 0")
             today = datetime.now().date()
             future_date = today + timedelta(days=days)
-            db_tasks = self.db.query(JobTask).filter(
+            stmt = select(JobTask).filter(
                 JobTask.user_id == user_id,
                 JobTask.is_overdue == False,
                 JobTask.due_date >= today,
                 JobTask.due_date <= future_date,
-                JobTask.status == TaskStatus.PENDING
-            ).all()
+                or_(JobTask.status == TaskStatus.PENDING, JobTask.status == TaskStatus.SNOOZED)
+            )
+
+            if filters.status:
+                stmt = stmt.where(JobTask.status == filters.status)
+            if filters.task_type:
+                stmt = stmt.where(JobTask.task_type == filters.task_type)
+
+            if filters.order == "desc":
+                stmt = stmt.order_by( desc(JobTask.created_at))
+            else:
+                stmt = stmt.order_by(asc(JobTask.created_at))
+
+            db_tasks = self.db.execute(stmt).scalars().all()
             return db_tasks
         except Exception as error:
             logger.error(error)
             raise Exception("Error retrieving upcoming tasks")
 
-    def get_overdue_tasks(self, user_id: str):
+    def get_overdue_tasks(self, user_id: str, filters: JobTaskFilterParams):
         try:
             today = datetime.now().date()
-            db_tasks = self.db.query(JobTask).filter(
+            stmt = select(JobTask).filter(
                 or_(and_(JobTask.is_overdue == True,
                          JobTask.user_id == user_id,
                          JobTask.status != TaskStatus.COMPLETED),
                     and_(JobTask.due_date < today,
                          JobTask.user_id == user_id,
                          JobTask.status != TaskStatus.COMPLETED))
-            ).all()
+            )
+
+            if filters.status:
+                stmt = stmt.where(JobTask.status == filters.status)
+            if filters.task_type:
+                stmt = stmt.where(JobTask.task_type == filters.task_type)
+
+            if filters.order == "desc":
+                stmt = stmt.order_by(desc(JobTask.created_at))
+            else:
+                stmt = stmt.order_by(asc(JobTask.created_at))
+
+            db_tasks = self.db.execute(stmt).scalars().all()
             return db_tasks
         except Exception as error:
             logger.error(error)
@@ -154,11 +190,12 @@ class TaskService:
             snooze_job_task = self.db.query(SnoozeJobTask).filter(SnoozeJobTask.task_id == task_id).first()
             self.db.close()
             if not snooze_job_task:
-                new_snooze_job_task = SnoozeJobTask(task_id=task_id, snoozed_by=snoozed_by, snooze_period=task.due_date)
+                new_snooze_job_task = SnoozeJobTask(task_id=task_id, next_due_date=task.due_date)
                 new_snooze_job_task.save_to_db()
-            snooze_job_task.snoozed_count += 1
-            snooze_job_task.next_due_date = task.due_date
-            snooze_job_task.save_to_db()
+            else:
+                snooze_job_task.snoozed_count += 1
+                snooze_job_task.next_due_date = task.due_date
+                snooze_job_task.save_to_db()
             return {
                 "success": True,
                 "message": f"Task snoozed for {period} days"
