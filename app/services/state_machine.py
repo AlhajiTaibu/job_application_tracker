@@ -134,6 +134,7 @@ class JobApplicationStateMachine:
             description="Respond to offer — check deadline with recruiter.",
             task_type=TaskType.OTHER,
             created_by=TaskCreator.SYSTEM,
+            due_date=datetime.now() + timedelta(days=7),
             meta_data={"job_application_id": job_app.id}
         )
         db_interview = self.db.query(Interview).filter(Interview.job_application_id == job_app.id).order_by(

@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 from app.core.logging_config import logger
 from app.models.job_application import JobTask, TaskCreator
 from app.schemas.job_application import ApiResponse
-from app.schemas.job_task import JobTaskCreate, JobTaskUpdate, JobTaskSnooze
+from app.schemas.job_task import JobTaskCreate, JobTaskUpdate, JobTaskSnooze, JobTaskFilterParams
 
 from app.services.task_service import task_service
 
@@ -44,27 +44,27 @@ def get_tasks(job_id: str, limit: int):
         raise Exception("Error getting tasks")
 
 
-def get_daily_tasks(user_id: str):
+def get_daily_tasks(user_id: str, filters: JobTaskFilterParams):
     try:
-        results = task_service.get_daily_tasks(user_id=user_id)
+        results = task_service.get_daily_tasks(user_id=user_id, filters=filters)
         return ApiResponse(success=True, payload={"data": results})
     except Exception as error:
         logger.error(error)
         raise Exception("Error getting daily tasks")
 
 
-def get_overdue_tasks(user_id: str):
+def get_overdue_tasks(user_id: str, filters: JobTaskFilterParams):
     try:
-        results = task_service.get_overdue_tasks(user_id=user_id)
+        results = task_service.get_overdue_tasks(user_id=user_id, filters=filters)
         return ApiResponse(success=True, payload={"data": results})
     except Exception as error:
         logger.error(error)
         raise Exception("Error getting overdue tasks")
 
 
-def get_upcoming_tasks(user_id: str):
+def get_upcoming_tasks(user_id: str, filters: JobTaskFilterParams):
     try:
-        results = task_service.get_upcoming_tasks(user_id=user_id, days=3)
+        results = task_service.get_upcoming_tasks(user_id=user_id, days=3, filters=filters)
         return ApiResponse(success=True, payload={"data": results})
     except Exception as error:
         logger.error(error)

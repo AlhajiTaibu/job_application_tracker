@@ -10,7 +10,8 @@ from app.core.logging_config import logger
 from app.crud import crud_job_task
 from app.models.user import User
 from app.schemas.job_application import ApiResponse
-from app.schemas.job_task import JobTaskCreate, JobTaskUpdate, JobTaskDetail, JobTaskList, JobTaskSnooze
+from app.schemas.job_task import JobTaskCreate, JobTaskUpdate, JobTaskDetail, JobTaskList, JobTaskSnooze, \
+    JobTaskFilterParams
 
 router = APIRouter()
 
@@ -31,12 +32,13 @@ async def task(
 
 @router.get("/daily_tasks", response_model=ApiResponse[JobTaskList])
 async def daily_tasks(
-        user: Annotated[User, Depends(get_current_user)]
+        user: Annotated[User, Depends(get_current_user)],
+        filters: Annotated[JobTaskFilterParams, Depends()],
 ):
     try:
         if not user.is_active:
             raise HTTPException(status_code=403, detail="Forbidden")
-        return crud_job_task.get_daily_tasks(user_id=user.id)
+        return crud_job_task.get_daily_tasks(user_id=user.id, filters=filters)
     except Exception as error:
         logger.error(error)
         raise HTTPException(status_code=400, detail=str(error))
@@ -44,12 +46,13 @@ async def daily_tasks(
 
 @router.get("/upcoming_tasks", response_model=ApiResponse[JobTaskList])
 async def upcoming_tasks(
-        user: Annotated[User, Depends(get_current_user)]
+        user: Annotated[User, Depends(get_current_user)],
+        filters: Annotated[JobTaskFilterParams, Depends()],
 ):
     try:
         if not user.is_active:
             raise HTTPException(status_code=403, detail="Forbidden")
-        return crud_job_task.get_upcoming_tasks(user_id=user.id)
+        return crud_job_task.get_upcoming_tasks(user_id=user.id, filters= filters)
     except Exception as error:
         logger.error(error)
         raise HTTPException(status_code=400, detail=str(error))
@@ -57,12 +60,13 @@ async def upcoming_tasks(
 
 @router.get("/overdue_tasks", response_model=ApiResponse[JobTaskList])
 async def overdue_tasks(
-        user: Annotated[User, Depends(get_current_user)]
+        user: Annotated[User, Depends(get_current_user)],
+        filters: Annotated[JobTaskFilterParams, Depends()],
 ):
     try:
         if not user.is_active:
             raise HTTPException(status_code=403, detail="Forbidden")
-        return crud_job_task.get_overdue_tasks(user_id=user.id)
+        return crud_job_task.get_overdue_tasks(user_id=user.id,filters=filters)
     except Exception as error:
         logger.error(error)
         raise HTTPException(status_code=400, detail=str(error))
