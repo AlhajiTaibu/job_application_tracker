@@ -98,13 +98,14 @@ async def link_contact_to_job_application(
 async def unlink_contact_to_job_application(
         user: Annotated[User, Depends(get_current_user)],
         db: Annotated[Session, Depends(get_db)],
-        doc_id: str
+        doc_id: str,
+        request_data: DocumentsLinkJobApplication
 
 ):
     try:
         if not user.is_active:
             raise HTTPException(status_code=403, detail="Forbidden")
-        return crud_documents.unlink_document_to_job_application(db=db, doc_id=doc_id)
+        return crud_documents.unlink_document_to_job_application(data=request_data,db=db, doc_id=doc_id)
     except Exception as e:
         logger.error(e)
         raise HTTPException(status_code=400, detail=str(e))
