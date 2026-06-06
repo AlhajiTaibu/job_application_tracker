@@ -107,3 +107,20 @@ async def link_contact_to_job_application(
     except Exception as e:
         logger.error(e)
         raise HTTPException(status_code=400, detail=str(e))
+
+
+@router.post("/unlink-to-application/{contact_id}")
+async def unlink_contact_to_job_application(
+        user: Annotated[User, Depends(get_current_user)],
+        db: Annotated[Session, Depends(get_db)],
+        contact_id: str,
+        request_data: ContactsLinkJobApplication
+
+):
+    try:
+        if not user.is_active:
+            raise HTTPException(status_code=403, detail="Forbidden")
+        return crud_contacts.unlink_contact_to_job_application(data=request_data, db=db, contact_id=contact_id)
+    except Exception as e:
+        logger.error(e)
+        raise HTTPException(status_code=400, detail=str(e))

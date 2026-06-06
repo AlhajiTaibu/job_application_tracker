@@ -1,6 +1,6 @@
 import uuid
 from datetime import datetime
-from typing import Literal, Optional
+from typing import Literal, Optional, List
 
 from fastapi import Form
 from pydantic import BaseModel
@@ -36,6 +36,12 @@ class DocumentFilterParams:
         self.order = order
         self.q = q
 
+class JobApplicationResponseTruncated(BaseModel):
+    id: uuid.UUID
+    company_name: str
+    job_title: str
+    status: str
+
 class DocumentsResponse(BaseModel):
     id: uuid.UUID
     name: str
@@ -43,7 +49,12 @@ class DocumentsResponse(BaseModel):
     purpose: str
     is_base: bool
     is_draft: bool
+    is_submitted: Optional[bool]
+    filename: str
+    status: str
+    size: int
     created_at: datetime
+    job_applications: Optional[List[JobApplicationResponseTruncated]]
 
 class DocumentsListResponse(BaseModel):
     data: list[DocumentsResponse]
@@ -59,3 +70,4 @@ class DocumentUpdate(BaseModel):
     is_submitted: Optional[bool] = False
     name: Optional[str] = None
     is_draft: Optional[bool] = False
+    is_base: Optional[bool] = False

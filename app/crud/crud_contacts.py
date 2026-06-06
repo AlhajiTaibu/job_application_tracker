@@ -139,7 +139,8 @@ def link_contact_to_job_application(data: ContactsLinkJobApplication, db: Sessio
         db_contact = db.query(Contacts).filter(Contacts.id == contact_id).first()
         if db_contact is None:
             raise Exception("Contact not found")
-        db_contact.job_applications.append(db_job)
+        if db_job not in db_contact.job_applications:
+            db_contact.job_applications.append(db_job)
         db.commit()
         db.refresh(db_job)
         return {
@@ -148,4 +149,25 @@ def link_contact_to_job_application(data: ContactsLinkJobApplication, db: Sessio
         }
     except Exception as e:
         logger.error(e)
-        raise Exception("Error updating contact")
+        raise Exception("Error linking contact to job application")
+
+
+def unlink_contact_to_job_application(data: ContactsLinkJobApplication, db: Session, contact_id: str):
+    try:
+        job_application_id = data.job_application_id
+        db_job = db.query(JobApplication).filter(JobApplication.id == job_application_id).first()
+        if db_job is None:
+            raise Exception("Job application not found")
+        db_contact = db.query(Contacts).filter(Contacts.id == contact_id).first()
+        if db_contact is None:
+            raise Exception("Contact not found")
+        db_contact.job_applications.remove(db_job)
+        db.commit()
+        db.refresh(db_job)
+        return {
+            "success": True,
+            "message": "Contact Unlinked to Job Application successfully"
+        }
+    except Exception as e:
+        logger.error(e)
+        raise Exception("Error unlinking contact from job application")

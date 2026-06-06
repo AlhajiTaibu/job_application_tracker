@@ -83,6 +83,7 @@ class JobApplicationShortResponse(BaseModel):
     job_url: Optional[str]
     date_applied: Optional[datetime]
     updated_at: Optional[datetime]
+    documents: Optional[List[DocumentsShortResponse]]
 
 
 class JobApplicationListResponse(BaseModel):
