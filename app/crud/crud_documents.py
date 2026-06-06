@@ -116,7 +116,8 @@ def link_document_to_job_application(data: DocumentsLinkJobApplication, db: Sess
         db_doc = db.query(Documents).filter(Documents.id == doc_id).first()
         if not db_doc:
             raise Exception("Document not found")
-        db_doc.job_applications.append(job)
+        if job not in db_doc.job_applications:
+            db_doc.job_applications.append(job)
         db.commit()
         db.refresh(db_doc)
         return {
@@ -128,12 +129,15 @@ def link_document_to_job_application(data: DocumentsLinkJobApplication, db: Sess
         raise Exception("Error linking document to job application")
 
 
-def unlink_document_to_job_application(db: Session, doc_id: str):
+def unlink_document_to_job_application(data: DocumentsLinkJobApplication, db: Session, doc_id: str):
     try:
         db_doc = db.query(Documents).filter(Documents.id == doc_id).first()
         if not db_doc:
             raise Exception("Document not found")
-        db_doc.job_applications.clear()
+        job = db.query(JobApplication).filter(JobApplication.id == data.job_application_id).first()
+        if not job:
+            raise Exception("Job Application not found")
+        db_doc.job_applications.remove(job)
         db.commit()
         db.refresh(db_doc)
         return {
@@ -147,14 +151,7 @@ def unlink_document_to_job_application(db: Session, doc_id: str):
 
 def get_all_documents(db: Session, filters: DocumentFilterParams, limit: int, user_id: str):
     try:
-        stmt = (select(
-            Documents.id,
-            Documents.name,
-            Documents.file_type,
-            Documents.purpose,
-            Documents.is_base,
-            Documents.is_draft,
-            Documents.created_at)
+        stmt = (select(Documents)
                 .outerjoin(documents_association_table, documents_association_table.c.documents_id == Documents.id)
                 .where(Documents.user_id == user_id)
                 .where(Documents.is_archived == False).distinct())
@@ -177,7 +174,7 @@ def get_all_documents(db: Session, filters: DocumentFilterParams, limit: int, us
             stmt = stmt.order_by(asc(sort_column))
 
         stmt = stmt.limit(limit + 1)
-        results = db.execute(stmt).unique().all()
+        results = db.execute(stmt).unique().scalars().all()
         return ApiResponse(success=True, payload={"data": results})
     except Exception as error:
         logger.error(error)
@@ -203,12 +200,14 @@ def update_document(db: Session, doc_id: str, data: DocumentUpdate):
         db_doc = db.query(Documents).filter(Documents.id == doc_id).first()
         if not db_doc:
             raise Exception("Document not found")
-        if data.is_submitted:
-            db_doc.name = data.is_submitted
+        if data.is_submitted is not None:
+            db_doc.is_submitted = data.is_submitted
         if data.name:
             db_doc.name = data.name
         if data.is_draft is not None:
             db_doc.is_draft = data.is_draft
+        if data.is_base is not None:
+            db_doc.is_base = data.is_base
         db.commit()
         db.refresh(db_doc)
         return {
