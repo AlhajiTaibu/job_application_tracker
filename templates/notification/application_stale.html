@@ -1,17 +1,35 @@
 {% extends "base.html" %}
 
-{% block title %}Job Application Notification{% endblock %}
+{% block title %}Application Status Update | Job Application Tracker{% endblock %}
 
 {% block header_title %}Job Application Tracker{% endblock %}
+
 {% block header_subtitle %}
-    <div class="subtitle">Job Application Notification</div>
+<div class="subtitle">Application Status Update</div>
 {% endblock %}
 
 {% block content %}
-    <h2>Job Application Notification</h2>
-    <p>Hello {{ email }},</p>
+<h2>Application Marked as Stale</h2>
 
-    <p> Your job application for {{ job_title }} at {{ company }} has been marked as stale due to inactivity for 30 days. Withdraw, keep waiting, or reactivate?</p>
+<p>Hello {{ email }},</p>
 
-<!--    <p>Once verified, you'll be able to:</p>-->
+<p>
+  We wanted to let you know that your application for <strong>{{ job_title }}</strong> at
+  <strong>{{ company }}</strong> has been marked as stale due to 30 days of inactivity.
+</p>
+
+<div style="margin: 24px 0; padding: 18px 20px; background-color: #f8f9fa; border-left: 4px solid #f39c12; border-radius: 4px;">
+  <p style="margin: 0; font-size: 16px; color: #2c3e50;">
+    You may now choose to withdraw the application, continue waiting for a response, or reactivate it to keep it active in your tracker.
+  </p>
+</div>
+
+<p>
+  Reviewing stale applications regularly can help keep your job search organized and up to date.
+</p>
+
+<p style="margin-bottom: 0;">
+  Best regards,<br>
+  <span style="font-weight: 600; color: #2c3e50;">Job Application Tracker</span>
+</p>
 {% endblock %}
