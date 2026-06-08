@@ -1,78 +1,111 @@
 {% extends "base.html" %}
 
-{% block title %}Job Application Weekly Digest{% endblock %}
+{% block title %}Your Weekly Digest | Job Application Tracker{% endblock %}
 
 {% block header_title %}Job Application Tracker{% endblock %}
+
 {% block header_subtitle %}
 <div class="subtitle">Weekly Digest</div>
 {% endblock %}
 
 {% block content %}
-<h2>Your Weekly Digest</h2>
+<h2 style="margin-bottom: 12px;">Your Weekly Digest</h2>
 <p>Hello {{ email }},</p>
+<p>Here is a summary of your job search activity for the week, along with upcoming items that may need your attention.</p>
 
-<div>
-    <p>This week: </p>
-    <table>
-        <tbody>
-        {% if data.this_week.applications_sent %}
-        <tr>
-            <td>Applications Sent</td>
-            <td>{{ data.this_week.applications_sent }}</td>
-        </tr>
-        {% endif %}
-        {% if data.this_week.response_received %}
-        <tr>
-            <td>Response Received</td>
-            <td>{{ data.this_week.response_received }}</td>
-        </tr>
-        {% endif %}
-        {% if data.this_week.interviews_completed_count%}
-        <tr>
-            <td>Interview Completed</td>
-            <td>{{ data.this_week.interviews_completed_count }}</td>
-        </tr>
-        {% endif %}
+<div style="margin: 30px 0;">
+  <h3 style="font-size: 18px; color: #2c3e50; margin: 0 0 15px 0;">This Week</h3>
+  <table style="width: 100%; border-collapse: collapse; font-size: 15px;">
+    <tbody>
+      {% if data.this_week.applications_sent %}
+      <tr>
+        <td style="padding: 12px 0; border-bottom: 1px solid #e9ecef; color: #495057;">Applications Sent</td>
+        <td style="padding: 12px 0; border-bottom: 1px solid #e9ecef; text-align: right; font-weight: 600; color: #2c3e50;">
+          {{ data.this_week.applications_sent }}
+        </td>
+      </tr>
+      {% endif %}
 
-        {% if data.this_week.tasks_completed %}
-        <tr>
-            <td>Tasks Completed</td>
-            <td>{{ data.this_week.tasks_completed }}</td>
-        </tr>
-        {% endif %}
+      {% if data.this_week.response_received %}
+      <tr>
+        <td style="padding: 12px 0; border-bottom: 1px solid #e9ecef; color: #495057;">Responses Received</td>
+        <td style="padding: 12px 0; border-bottom: 1px solid #e9ecef; text-align: right; font-weight: 600; color: #2c3e50;">
+          {{ data.this_week.response_received }}
+        </td>
+      </tr>
+      {% endif %}
 
-        {% if data.this_week.overdue_tasks %}
-        <tr>
-            <td>Tasks Overdue</td>
-            <td>{{ data.this_week.overdue_tasks }}</td>
-        </tr>
-        {% endif %}
-        </tbody>
-    </table>
+      {% if data.this_week.interviews_completed_count %}
+      <tr>
+        <td style="padding: 12px 0; border-bottom: 1px solid #e9ecef; color: #495057;">Interviews Completed</td>
+        <td style="padding: 12px 0; border-bottom: 1px solid #e9ecef; text-align: right; font-weight: 600; color: #2c3e50;">
+          {{ data.this_week.interviews_completed_count }}
+        </td>
+      </tr>
+      {% endif %}
+
+      {% if data.this_week.tasks_completed %}
+      <tr>
+        <td style="padding: 12px 0; border-bottom: 1px solid #e9ecef; color: #495057;">Tasks Completed</td>
+        <td style="padding: 12px 0; border-bottom: 1px solid #e9ecef; text-align: right; font-weight: 600; color: #2c3e50;">
+          {{ data.this_week.tasks_completed }}
+        </td>
+      </tr>
+      {% endif %}
+
+      {% if data.this_week.overdue_tasks %}
+      <tr>
+        <td style="padding: 12px 0; border-bottom: 1px solid #e9ecef; color: #495057;">Overdue Tasks</td>
+        <td style="padding: 12px 0; border-bottom: 1px solid #e9ecef; text-align: right; font-weight: 600; color: #c0392b;">
+          {{ data.this_week.overdue_tasks }}
+        </td>
+      </tr>
+      {% endif %}
+    </tbody>
+  </table>
 </div>
 
-<div>
-    <p>Next week:</p>
-    <table>
-        {% if data.next_week.scheduled_interviews_count %}
-        <tr>
-            <td>Scheduled Interviews</td>
-            <td>{{data.next_week.scheduled_interviews_count}}</td>
-        </tr>
-        {% endif %}
+<div style="margin: 30px 0;">
+  <h3 style="font-size: 18px; color: #2c3e50; margin: 0 0 15px 0;">Looking Ahead</h3>
+  <table style="width: 100%; border-collapse: collapse; font-size: 15px;">
+    <tbody>
+      {% if data.next_week.scheduled_interviews_count %}
+      <tr>
+        <td style="padding: 12px 0; border-bottom: 1px solid #e9ecef; color: #495057;">Scheduled Interviews</td>
+        <td style="padding: 12px 0; border-bottom: 1px solid #e9ecef; text-align: right; font-weight: 600; color: #2c3e50;">
+          {{ data.next_week.scheduled_interviews_count }}
+        </td>
+      </tr>
+      {% endif %}
 
-        {% if data.next_week.follow_up_due_applications %}
-        <tr>
-            <td>Application Follow-up Tasks Due</td>
-            <td>{{data.next_week.follow_up_due_applications}}</td>
-        </tr>
-        {% endif %}
-    </table>
+      {% if data.next_week.follow_up_due_applications %}
+      <tr>
+        <td style="padding: 12px 0; border-bottom: 1px solid #e9ecef; color: #495057;">Follow-ups Due</td>
+        <td style="padding: 12px 0; border-bottom: 1px solid #e9ecef; text-align: right; font-weight: 600; color: #2c3e50;">
+          {{ data.next_week.follow_up_due_applications }}
+        </td>
+      </tr>
+      {% endif %}
+    </tbody>
+  </table>
 </div>
+
 {% if data.response_rate_compare %}
-<div>
-    <p>Your response rate this week ({{data.this_week.response_rate}}%) is {{data.response_rate_compare}} from last week
-        ({{data.this_week.last_week_response_rate}}%)</p>
+<div style="margin: 30px 0; padding: 18px 20px; background-color: #f8f9fa; border-left: 4px solid #2c3e50; border-radius: 4px;">
+  <p style="margin: 0; font-size: 15px; color: #495057;">
+    Your response rate this week was <strong>{{ data.this_week.response_rate }}%</strong>,
+    which is <strong>{{ data.response_rate_compare }}</strong> compared with last week
+    ({{ data.this_week.last_week_response_rate }}%).
+  </p>
 </div>
 {% endif %}
+
+<p style="margin-top: 30px;">
+  Stay consistent and keep your pipeline moving forward.
+</p>
+
+<p style="margin-bottom: 0;">
+  Best regards,<br>
+  <span style="font-weight: 600; color: #2c3e50;">Job Application Tracker</span>
+</p>
 {% endblock %}
