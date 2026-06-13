@@ -92,12 +92,23 @@ def process_job_application_data(job_applications) -> dict[str, Any]:
 
 
 def process_interview_rounds(df):
-    outcome_counts = df['outcome'].value_counts().to_dict()
-    outcome_percentages = {k: round((int(v) / len(df)) * 100, 2) for k, v in outcome_counts.items()}
+    if len(df) == 0:
+        return {
+            "total_interviews": 0,
+            "passed": 0,
+            "passed_percentage": 0,
+        }
+
+    outcome_counts = df["outcome"].value_counts().to_dict()
+    outcome_percentages = {
+        k: round((int(v) / len(df)) * 100, 2)
+        for k, v in outcome_counts.items()
+    }
+
     return {
         "total_interviews": len(df),
-        "passed": outcome_counts['passed'],
-        "passed_percentage": outcome_percentages['passed']
+        "passed": outcome_counts.get("passed", 0),
+        "passed_percentage": outcome_percentages.get("passed", 0),
     }
 
 
@@ -162,7 +173,7 @@ def get_applications_with_status_history(db: Session, user_id: str):
 
 async def retrieve_user_interviews(db: Session, user_id: str):
     key = f"user_interviews:{user_id}"
-    redis_key = f"{key}:lock"
+    redis_key = f"{key}"
     data = await redis_manager.get_value(redis_key)
     if data:
         result = json.loads(data)

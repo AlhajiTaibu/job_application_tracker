@@ -30,6 +30,7 @@ class JobApplicationResponseTruncated(BaseModel):
     company_name: str
     job_title: str
     status: str
+    source: str
 
 
 class ContactsDetailResponse(BaseModel):

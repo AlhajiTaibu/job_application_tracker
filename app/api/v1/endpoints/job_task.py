@@ -81,7 +81,7 @@ async def task(
     try:
         if not user.is_active:
             raise HTTPException(status_code=403, detail="Forbidden")
-        return crud_job_task.update_job_task(data=request_data, task_id=task_id)
+        return await crud_job_task.update_job_task(data=request_data, task_id=task_id, user_id=user.id)
     except Exception as e:
         logger.error(e)
         raise HTTPException(status_code=400, detail=str(e))
@@ -125,7 +125,7 @@ async def task(
     try:
         if not user.is_active:
             raise HTTPException(status_code=403, detail="Forbidden")
-        return crud_job_task.delete_task(task_id=task_id, db=db)
+        return await crud_job_task.delete_task(task_id=task_id, db=db)
     except Exception as error:
         raise HTTPException(status_code=400, detail=str(error))
 
@@ -139,7 +139,7 @@ async def task(
     try:
         if not user.is_active:
             raise HTTPException(status_code=403, detail="Forbidden")
-        return crud_job_task.snooze_job_task(data=request_data, task_id=task_id)
+        return await crud_job_task.snooze_job_task(data=request_data, task_id=task_id, user_id=user.id)
     except Exception as e:
         logger.error(e)
         raise HTTPException(status_code=400, detail=str(e))
@@ -153,7 +153,7 @@ async def task(
     try:
         if not user.is_active:
             raise HTTPException(status_code=403, detail="Forbidden")
-        return crud_job_task.complete_job_task(task_id=task_id)
+        return await crud_job_task.complete_job_task(task_id=task_id, user_id=user.id)
     except Exception as e:
         logger.error(e)
         raise HTTPException(status_code=400, detail=str(e))

@@ -3,7 +3,7 @@ import datetime
 from dateutil import parser
 from sqlalchemy import select, or_, and_, desc, asc
 from sqlalchemy.orm import Session
-
+from app.core.redis import redis_manager
 from app.core.logging_config import logger
 from app.core.util import encode_cursor, decode_cursor, cast_to_column_type
 from app.models.job_application import Interview, JobApplication, JobApplicationStatusTransitionType
@@ -25,7 +25,8 @@ def create_interview(data: InterviewCreate, db: Session):
             notes=data.notes,
             timezone=data.timezone,
             estimated_duration=data.estimated_duration,
-            actual_duration=data.actual_duration
+            actual_duration=data.actual_duration,
+            outcome="scheduled"
         )
         if data.date:
             interview_instance.date = parser.parse(data.date).date()
@@ -52,7 +53,7 @@ def create_interview(data: InterviewCreate, db: Session):
         raise Exception("Error creating interview")
 
 
-def update_interview(data: InterviewUpdate, interview_id: str, db: Session):
+async def update_interview(data: InterviewUpdate, interview_id: str, db: Session, user_id: str):
     try:
         db_interview = db.query(Interview).where(Interview.id == interview_id).first()
         if not db_interview:
@@ -70,6 +71,13 @@ def update_interview(data: InterviewUpdate, interview_id: str, db: Session):
         db.close()
         if data.outcome:
             interview_state_machine.transition_state(db_interview, data.outcome)
+
+        keys = [
+            f"user_interviews:{user_id}",
+        ]
+
+        for key in keys:
+             await redis_manager.delete_value(key)
 
         return {
             "success": True,
@@ -106,13 +114,20 @@ def get_interviews(job_application_id: str, db: Session, limit: int):
         raise Exception("Error getting interview")
 
 
-def delete_interview(interview_id: str, db: Session):
+async def delete_interview(interview_id: str, db: Session, user_id: str):
     try:
         db_interview = db.query(Interview).filter(Interview.id == interview_id).first()
         if db_interview is None:
             raise Exception("Interview not found")
         db.delete(db_interview)
         db.commit()
+        keys = [
+            f"user_interviews:{user_id}",
+        ]
+
+        for key in keys:
+             await redis_manager.delete_value(key)
+
         return {
             "success": True,
             "message": "Interview deleted successfully"

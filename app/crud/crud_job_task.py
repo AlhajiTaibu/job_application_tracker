@@ -4,6 +4,7 @@ from app.core.logging_config import logger
 from app.models.job_application import JobTask, TaskCreator
 from app.schemas.job_application import ApiResponse
 from app.schemas.job_task import JobTaskCreate, JobTaskUpdate, JobTaskSnooze, JobTaskFilterParams
+from app.core.redis import redis_manager
 
 from app.services.task_service import task_service
 
@@ -17,9 +18,16 @@ def create_job_task(data: JobTaskCreate, user_id: str):
         raise Exception("Error creating task")
 
 
-def update_job_task(data: JobTaskUpdate, task_id: str):
+async def update_job_task(data: JobTaskUpdate, task_id: str, user_id:str):
     try:
         result = task_service.update_task(task_id, data)
+
+        keys = [
+            f"user_task:{user_id}",
+        ]
+
+        for key in keys:
+            await redis_manager.delete_value_sync(key)
         return result
     except Exception as e:
         logger.error(e)
@@ -71,13 +79,20 @@ def get_upcoming_tasks(user_id: str, filters: JobTaskFilterParams):
         raise Exception("Error getting upcoming tasks")
 
 
-def delete_task(task_id: str, db: Session):
+async def delete_task(task_id: str, db: Session):
     try:
         db_task = db.query(JobTask).filter(JobTask.id == task_id).first()
         if db_task is None:
             raise Exception("Task not found")
         db.delete(db_task)
         db.commit()
+
+        keys = [
+            f"user_task:{db_task.user_id}",
+        ]
+
+        for key in keys:
+             await redis_manager.delete_value(key)
         return {
             "success": True,
             "message": "Task deleted successfully"
@@ -87,17 +102,32 @@ def delete_task(task_id: str, db: Session):
         raise Exception("Error deleting task")
 
 
-def snooze_job_task(data: JobTaskSnooze, task_id: str):
+async  def snooze_job_task(data: JobTaskSnooze, task_id: str, user_id: str):
     try:
-        return task_service.snooze_task(task_id, data.period, TaskCreator.MANUAL)
+        result = task_service.snooze_task(task_id, data.period, TaskCreator.MANUAL)
+        keys = [
+            f"user_task:{user_id}",
+        ]
+
+        for key in keys:
+           await redis_manager.delete_value(key)
+        return result
     except Exception as e:
         logger.error(e)
         raise Exception("Error Snoozing task")
 
 
-def complete_job_task(task_id: str):
+async def complete_job_task(task_id: str, user_id:str):
     try:
-        return task_service.complete_task(task_id)
+        result = task_service.complete_task(task_id)
+
+        keys = [
+            f"user_task:{user_id}",
+        ]
+
+        for key in keys:
+             await redis_manager.delete_value(key)
+        return result
     except Exception as e:
         logger.error(e)
         raise Exception("Error Completing task")

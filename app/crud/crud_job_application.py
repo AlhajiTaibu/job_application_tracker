@@ -2,7 +2,7 @@ from datetime import datetime
 
 from sqlalchemy import desc, asc, or_, select, and_
 from sqlalchemy.orm import Session
-
+from app.core.redis import redis_manager
 from app.core.logging_config import logger
 from app.core.util import decode_cursor, encode_cursor, retrieve_last_item_key, cast_to_column_type
 from app.models.association import documents_association_table
@@ -137,7 +137,7 @@ def get_job_applications(user: User, db: Session, filters: JobFilterParams, limi
         raise Exception("Error getting job applications")
 
 
-def update_job_application(
+async def update_job_application(
         data: job_application.JobApplicationUpdate,
         db: Session,
         job_id: str):
@@ -156,6 +156,15 @@ def update_job_application(
         db.commit()
         db.refresh(db_job_app)
 
+        keys = [
+            f"job_applications_status_history:{db_job_app.user_id}",
+            f"user_interviews:{db_job_app.user_id}",
+            f"user_task:{db_job_app.user_id}",
+        ]
+
+        for key in keys:
+             await redis_manager.delete_value(key)
+
         return {
             "success": True,
             "message": "Job application updated successfully",
@@ -169,7 +178,7 @@ def update_job_application(
         raise Exception("Error updating job application")
 
 
-def delete_job_application(job_id: str, user: User, db: Session):
+async def delete_job_application(job_id: str, user: User, db: Session):
     try:
         db_job_app = db.query(JobApplication).filter(JobApplication.id == job_id,
                                                      JobApplication.user_id == user.id,
@@ -179,6 +188,14 @@ def delete_job_application(job_id: str, user: User, db: Session):
         db_job_app.is_archived = True
         db.commit()
         db.refresh(db_job_app)
+        keys = [
+            f"job_applications_status_history:{db_job_app.user_id}",
+            f"user_interviews:{db_job_app.user_id}",
+            f"user_task:{db_job_app.user_id}",
+        ]
+
+        for key in keys:
+             await redis_manager.delete_value(key)
         return {
             "success": True,
             "message": "Job application deleted successfully"
@@ -187,13 +204,21 @@ def delete_job_application(job_id: str, user: User, db: Session):
         raise Exception("Error deleting job application")
 
 
-def transition_job_application_status(db: Session, job_id: str, data: JobApplicationStatusTransition):
+async def transition_job_application_status(db: Session, job_id: str, data: JobApplicationStatusTransition):
     try:
         db_job_app = db.query(JobApplication).filter(JobApplication.id == job_id).first()
         if db_job_app is None:
             raise Exception("Job application not found")
         db.close()
         result = job_application_state_machine.transition_state(db_job_app, data.to_status, JobApplicationStatusTransitionType.MANUAL, metadata={"reason": data.reason})
+        keys = [
+            f"job_applications_status_history:{db_job_app.user_id}",
+            f"user_interviews:{db_job_app.user_id}",
+            f"user_task:{db_job_app.user_id}",
+        ]
+
+        for key in keys:
+             await redis_manager.delete_value(key)
         return ApiResponse(success=True, payload=result)
     except Exception as error:
         logger.error(error)

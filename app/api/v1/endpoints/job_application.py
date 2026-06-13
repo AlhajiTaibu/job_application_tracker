@@ -38,7 +38,7 @@ async def job_application(
     try:
         if not user.is_active:
             raise HTTPException(status_code=403, detail="Forbidden")
-        return crud_job_application.update_job_application(data=request_data, db=db, job_id=job_id)
+        return await crud_job_application.update_job_application(data=request_data, db=db, job_id=job_id)
     except Exception as e:
         logger.error(e)
         raise HTTPException(status_code=400, detail=f"{str(e)}")
@@ -53,7 +53,7 @@ async def job_application(
     try:
         if not user.is_active:
             raise HTTPException(status_code=403, detail="Forbidden")
-        return crud_job_application.delete_job_application(job_id=job_id, user=user, db=db)
+        return await crud_job_application.delete_job_application(job_id=job_id, user=user, db=db)
     except Exception as error:
         logger.error(error)
         raise HTTPException(status_code=400, detail=f"{str(error)}")
@@ -101,7 +101,7 @@ async def job_application_status_transition(
     try:
         if not user.is_active:
             raise HTTPException(status_code=403, detail="Forbidden")
-        return crud_job_application.transition_job_application_status(db=db, job_id=job_id, data=data)
+        return await crud_job_application.transition_job_application_status(db=db, job_id=job_id, data=data)
     except Exception as error:
         logger.error(error)
         raise HTTPException(status_code=400, detail=f"{str(error)}")

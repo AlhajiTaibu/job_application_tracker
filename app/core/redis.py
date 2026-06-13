@@ -75,7 +75,7 @@ class RedisManager:
             logger.error(f"Redis GET Error: {error}")
             return None
 
-    async def delete_key(self, key: str):
+    async def delete_value(self, key: str):
         try:
             client = await self.get_client()
             await client.delete(key)
