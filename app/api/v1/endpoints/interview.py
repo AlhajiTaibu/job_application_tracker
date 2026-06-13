@@ -74,7 +74,7 @@ async def interview(
     try:
         if not user.is_active:
             raise HTTPException(status_code=403, detail="Forbidden")
-        return crud_interview.update_interview(data=request_data, interview_id=interview_id, db=db)
+        return await crud_interview.update_interview(data=request_data, interview_id=interview_id, db=db, user_id=user.id)
     except Exception as e:
         logger.error(e)
         raise HTTPException(status_code=400, detail=str(e))
@@ -120,7 +120,7 @@ async def interview(
     try:
         if not user.is_active:
             raise HTTPException(status_code=403, detail="Forbidden")
-        return crud_interview.delete_interview(interview_id=interview_id, db=db)
+        return await crud_interview.delete_interview(interview_id=interview_id, db=db, user_id=user.id)
     except Exception as e:
         logger.error(e)
         raise HTTPException(status_code=400, detail=str(e))
