@@ -69,6 +69,9 @@ class ContactsDetailTruncatedResponse(BaseModel):
     id: uuid.UUID
     name: str
     email: Optional[str]
+    relationship_type: Optional[str]
+    role: Optional[str]
+    linkedIn_url: Optional[str]
 
 
 class JobApplicationShortResponse(BaseModel):
