@@ -36,7 +36,7 @@ celery_app.conf.beat_schedule = {
     'delete_expired_otp': {
         'task': 'app.tasks.user_tasks.delete_expired_otp',
         'schedule': 86400.0
-    }
+    },
 }
 
 celery_app.conf.update(
