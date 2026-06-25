@@ -1,3 +1,5 @@
+from random import randint, random
+
 from sqlalchemy import update, or_, select
 
 from app.core.celery import celery_app
@@ -64,8 +66,7 @@ def send_task_reminders():
                         "message": message
                     }
                 )
-            if user.notification_type == NotificationType.PUSH:
-                push_notification_service.send_push_notification(user_id, title=subject, body=f"URGENT:{task_type} - {message}")
+            push_notification_service.send_push_notification(user_id, title=subject, body=f"URGENT:{task_type} - {message}")
             logger.info(f"Sending reminder for task: {task.name}")
     except Exception as error:
         logger.error(error)
@@ -140,3 +141,4 @@ def weekly_user_report():
         logger.error(error)
     finally:
         db.close()
+

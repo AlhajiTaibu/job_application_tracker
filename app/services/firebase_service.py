@@ -6,6 +6,7 @@ from firebase_admin import credentials, messaging
 from pathlib import Path
 from app.core.config import settings
 from app.core.logging_config import logger
+from app.crud.crud_notification import save_notification
 from app.database import SessionLocal
 from app.models.notification import NotificationToken
 
@@ -74,6 +75,12 @@ class PushNotificationService:
                 body=body,
                 data_payload=data_payload
             )
+            data = {
+                "title": title,
+                "message": body
+            }
+            self.db.close()
+            save_notification(user_id, data)
         except Exception as error:
             logger.error(error)
             raise Exception("Error sending notification")
