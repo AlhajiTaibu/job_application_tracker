@@ -16,11 +16,13 @@ from app.database import engine
 from sentry_sdk.integrations.fastapi import FastApiIntegration
 from prometheus_fastapi_instrumentator import Instrumentator
 
+
 sentry_sdk.init(
     dsn=settings.sentry_dsn,
     integrations=[FastApiIntegration()],
     traces_sample_rate=0.1,
-    send_default_pii=False
+    send_default_pii=False,
+    enable_logs=True,
 )
 
 @asynccontextmanager
