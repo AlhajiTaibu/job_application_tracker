@@ -48,5 +48,6 @@ class Settings(BaseSettings):
     api_host: str
     api_port: int
     frontend_url: str
+    sentry_dsn: str
 
 settings = Settings()
