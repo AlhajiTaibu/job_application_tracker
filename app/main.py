@@ -1,5 +1,6 @@
 from contextlib import asynccontextmanager
 
+import sentry_sdk
 from fastapi import FastAPI
 from sqladmin import Admin
 from starlette.middleware.cors import CORSMiddleware
@@ -12,7 +13,15 @@ from app.core.config import settings
 from fastapi.templating import Jinja2Templates
 
 from app.database import engine
+from sentry_sdk.integrations.fastapi import FastApiIntegration
+from prometheus_fastapi_instrumentator import Instrumentator
 
+sentry_sdk.init(
+    dsn=settings.sentry_dsn,
+    integrations=[FastApiIntegration()],
+    traces_sample_rate=0.1,
+    send_default_pii=False
+)
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -46,6 +55,8 @@ admin = Admin(app, engine, title=settings.PROJECT_NAME, authentication_backend=a
 
 
 AdminRegistration(admin)
+
+Instrumentator().instrument(app).expose(app, endpoint="/metrics")
 
 @app.get("/")
 def root():
