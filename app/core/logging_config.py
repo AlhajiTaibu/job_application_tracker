@@ -8,20 +8,12 @@ def setup_logging():
     logger = logging.getLogger("job_tracker")
     logger.setLevel(logging.INFO)
 
-    # 3. Create a StreamHandler (for terminal output)
-    handler = logging.StreamHandler(sys.stdout)
-
-    # 4. Create the formatter and add it to the handler
-    formatter = logging.Formatter(LOG_FORMAT)
-    handler.setFormatter(formatter)
-
-    # 5. Add the handler to your logger
-    # Check to prevent adding multiple handlers if the function is called twice
     if not logger.handlers:
+        handler = logging.StreamHandler(sys.stdout)
+        handler.setFormatter(logging.Formatter(LOG_FORMAT))
         logger.addHandler(handler)
 
-    # Optional: Prevent logs from being sent to the "root" logger (stops duplicates)
-    logger.propagate = False
+    logger.propagate = True
 
 setup_logging()
 logger = logging.getLogger("job_tracker")
